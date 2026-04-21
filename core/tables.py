@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from django_tables2.utils import A
 
 from .models import pessoa, livro, emprestimo
+from .templatetags.badges import badge_status, badge_tipo_obra
 
 
 class pessoa_table(tables.Table):
@@ -35,17 +36,7 @@ class livro_table(tables.Table):
         return format_html('<a href="/livro/update/{}/" class="btn btn-sm btn-outline-secondary">Editar</a>', record.pk)
 
     def render_tipo_obra(self, record):
-        cores = {
-            'BIBLIOGRAFIA': 'bg-primary',
-            'TESE_DISSERTACAO': 'bg-warning text-dark',
-            'MONOGRAFIA': 'bg-info text-dark',
-        }
-        rotulos = {
-            'BIBLIOGRAFIA': 'Bibliografia',
-            'TESE_DISSERTACAO': 'Tese/Dissert.',
-            'MONOGRAFIA': 'Monografia',
-        }
-        return format_html('<span class="badge {}">{}</span>', cores.get(record.tipo_obra, 'bg-secondary'), rotulos.get(record.tipo_obra, record.tipo_obra))
+        return badge_tipo_obra(record.tipo_obra, curto=True)
 
     def render_isbn(self, value):
         return value or '-'
@@ -70,8 +61,7 @@ class emprestimo_table(tables.Table):
     id = tables.LinkColumn('emprestimo_delete_alias', args=[A('pk')], verbose_name='Excluir')
 
     def render_status(self, record):
-        badge = {'EMPRESTADO': 'bg-primary', 'DEVOLVIDO': 'bg-success', 'ATRASADO': 'bg-danger'}.get(record.status, 'bg-secondary')
-        return format_html('<span class="badge {}">{}</span>', badge, record.status)
+        return badge_status(record.status)
 
     class Meta:
         model = emprestimo

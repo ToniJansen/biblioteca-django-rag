@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 
 
 FUNCAO_CHOICES = [
@@ -86,25 +86,33 @@ class emprestimo(models.Model):
     data_devolucao_real = models.DateField(null=True, blank=True, verbose_name='Devolucao real')
 
     def save(self, *args, **kwargs):
+        """Cria/atualiza o emprestimo de forma atomica.
+
+        A transacao garante que o decremento (ou incremento) do estoque do livro
+        e o save do proprio emprestimo aconteçam como uma unica operacao. Se
+        qualquer etapa falhar, nenhuma alteracao persiste e o contador de
+        exemplares disponiveis mantem-se consistente.
+        """
         eh_novo = self.pk is None
 
-        if eh_novo:
-            if self.livro.exemplares_disponiveis <= 0:
-                raise ValidationError(f'Obra "{self.livro.titulo}" nao tem exemplares disponiveis.')
-            if not self.leitor.ativo:
-                raise ValidationError(f'Leitor "{self.leitor.nome}" esta inativo.')
-            self.livro.exemplares_disponiveis -= 1
-            self.livro.save()
-            if not self.data_devolucao_prevista:
-                self.data_devolucao_prevista = date.today() + timedelta(days=PRAZO_EMPRESTIMO_DIAS)
-        else:
-            anterior = emprestimo.objects.get(pk=self.pk)
-            acabou_de_devolver = anterior.data_devolucao_real is None and self.data_devolucao_real is not None
-            if acabou_de_devolver:
-                self.livro.exemplares_disponiveis += 1
+        with transaction.atomic():
+            if eh_novo:
+                if self.livro.exemplares_disponiveis <= 0:
+                    raise ValidationError(f'Obra "{self.livro.titulo}" nao tem exemplares disponiveis.')
+                if not self.leitor.ativo:
+                    raise ValidationError(f'Leitor "{self.leitor.nome}" esta inativo.')
+                self.livro.exemplares_disponiveis -= 1
                 self.livro.save()
+                if not self.data_devolucao_prevista:
+                    self.data_devolucao_prevista = date.today() + timedelta(days=PRAZO_EMPRESTIMO_DIAS)
+            else:
+                anterior = emprestimo.objects.get(pk=self.pk)
+                acabou_de_devolver = anterior.data_devolucao_real is None and self.data_devolucao_real is not None
+                if acabou_de_devolver:
+                    self.livro.exemplares_disponiveis += 1
+                    self.livro.save()
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     @property
     def status(self):

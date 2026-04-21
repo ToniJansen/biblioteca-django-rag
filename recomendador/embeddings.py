@@ -89,3 +89,22 @@ def get_nome_modelo() -> str:
     if getattr(settings, 'RECOMENDADOR_MOCK', False):
         return 'mock'
     return getattr(settings, 'RECOMENDADOR_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
+
+
+def preload_model() -> bool:
+    """Forca o carregamento do modelo SentenceTransformer.
+
+    Destina-se a ser chamado no startup da aplicacao (AppConfig.ready para
+    runserver, gunicorn.conf.py on_starting para producao com preload_app=True)
+    para evitar que cada worker faça lazy-load independente e gere picos de
+    memoria (~450 MB por worker).
+
+    Retorna True se o modelo foi carregado, False em modo mock ou se houve
+    falha (logada, nao propagada).
+    """
+    try:
+        modelo = _carregar_modelo()
+        return modelo is not None
+    except Exception as e:
+        logger.warning('preload_model falhou: %s', e)
+        return False

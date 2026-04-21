@@ -8,9 +8,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Carrega variaveis do .env (gitignored) ANTES de ler qualquer chave
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = 'django-insecure-biblioteca-mvp-dev-only-change-in-production-abc456'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+# SECRET_KEY: lida do .env. O fallback existe apenas para desenvolvimento local;
+# em qualquer ambiente compartilhado, defina DJANGO_SECRET_KEY no .env.
+SECRET_KEY = os.getenv(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-biblioteca-mvp-dev-only-change-in-production-abc456',
+)
+
+# DEBUG: desligado por padrão. Ative com DJANGO_DEBUG=true no .env (dev).
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').strip().lower() in ('1', 'true', 'yes', 'on')
+
+# ALLOWED_HOSTS: lista separada por vírgula no .env. Em DEBUG aceita localhost por padrão.
+_allowed = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').strip()
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',

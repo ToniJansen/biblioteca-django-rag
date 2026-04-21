@@ -19,18 +19,47 @@ from core.models import emprestimo, livro
 from .models import LivroEmbedding
 
 
+# Cache em memoria da matriz completa de embeddings do acervo.
+# Evita consultar o banco + reconstruir a matriz numpy a cada pergunta do chat
+# ou a cada visita a pagina de detalhe de uma obra. Invalidado por signals:
+# ver recomendador/signals.py (post_save/post_delete de LivroEmbedding e livro).
+_CACHE_MATRIZ_COMPLETA: Optional[tuple] = None
+
+
+def invalidar_cache_matriz() -> None:
+    """Limpa o cache da matriz completa. Chamado pelos signals quando o acervo muda."""
+    global _CACHE_MATRIZ_COMPLETA
+    _CACHE_MATRIZ_COMPLETA = None
+
+
 def _carregar_matriz(queryset: Optional[QuerySet] = None) -> tuple:
-    """Carrega todas as embeddings em memoria.
+    """Carrega as embeddings em memoria.
 
     Retorna (matriz_numpy [N, D], lista_de_livro_ids na mesma ordem).
-    Se nao houver embeddings ou apenas 0 itens, retorna tupla vazia.
-    """
-    qs = queryset if queryset is not None else LivroEmbedding.objects.all()
-    registros = list(qs.only('livro_id', 'vetor', 'dimensao'))
+    Se nao houver embeddings, retorna (matriz_vazia, []).
 
+    Quando chamado sem queryset explicito, utiliza um cache em memoria
+    compartilhado. O cache e invalidado automaticamente quando:
+      - uma obra e criada, atualizada ou deletada (signal post_save/post_delete em core.livro);
+      - um LivroEmbedding e criado ou deletado (signal em recomendador.models.LivroEmbedding).
+
+    Chamadas com queryset customizado (ex: testes) nao usam cache.
+    """
+    global _CACHE_MATRIZ_COMPLETA
+
+    if queryset is not None:
+        return _construir_matriz(queryset)
+
+    if _CACHE_MATRIZ_COMPLETA is None:
+        _CACHE_MATRIZ_COMPLETA = _construir_matriz(LivroEmbedding.objects.all())
+    return _CACHE_MATRIZ_COMPLETA
+
+
+def _construir_matriz(qs: QuerySet) -> tuple:
+    """Materializa a matriz numpy a partir de um queryset de LivroEmbedding."""
+    registros = list(qs.only('livro_id', 'vetor', 'dimensao'))
     if not registros:
         return np.empty((0, 0), dtype=np.float32), []
-
     ids = [r.livro_id for r in registros]
     matriz = np.stack([r.as_numpy for r in registros])
     return matriz, ids

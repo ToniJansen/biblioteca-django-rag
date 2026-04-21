@@ -1,13 +1,17 @@
-"""Signal que regenera o embedding sempre que um livro e criado ou editado.
+"""Signals do modulo recomendador.
+
+- Regenera o embedding sempre que um livro e criado ou editado.
+- Invalida o cache em memoria da matriz de embeddings sempre que o acervo muda
+  (criacao/atualizacao/delecao de livro, criacao/delecao de LivroEmbedding).
 
 Lazy import do embeddings.py para nao carregar o modelo durante migrations
 ou comandos como `startapp` que disparam Django setup.
 """
-from django.db.models.signals import post_save
+import logging
+
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -42,3 +46,16 @@ def regenerar_embedding(sender, instance, **kwargs):
         )
     except Exception as e:
         logger.warning('Falhou ao gerar embedding para livro id=%s: %s', instance.pk, e)
+
+
+def _invalidar_cache(*args, **kwargs):
+    """Invalida o cache da matriz de embeddings usado pelo chat e pela recomendacao."""
+    from .services import invalidar_cache_matriz
+    invalidar_cache_matriz()
+
+
+# Invalidacao do cache em toda mutacao relevante no acervo.
+post_save.connect(_invalidar_cache, sender='core.livro')
+post_delete.connect(_invalidar_cache, sender='core.livro')
+post_save.connect(_invalidar_cache, sender='recomendador.LivroEmbedding')
+post_delete.connect(_invalidar_cache, sender='recomendador.LivroEmbedding')
