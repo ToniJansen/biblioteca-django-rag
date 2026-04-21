@@ -1,0 +1,11 @@
+Django>=4.2,<5.0
+django-bootstrap-v5>=1.0
+django-tables2>=2.7
+
+# Recomendacao semantica — Fase 1 (HuggingFace, local)
+sentence-transformers>=3.0
+numpy>=1.24
+
+# Chat conversacional — Fase 2 (Groq API)
+groq>=0.11
+python-dotenv>=1.0

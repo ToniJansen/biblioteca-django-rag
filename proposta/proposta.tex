@@ -1,0 +1,243 @@
+% =============================================================================
+% Proposta de Trabalho - Disciplina INF0330 (UFG)
+% Sistema de Gestão de Biblioteca com Recomendações
+%
+% Este arquivo segue configuração ABNT/UFG básica (Times 12pt, margens 3/2 cm,
+% espaçamento 1,5). Compila standalone com pdflatex no Overleaf.
+%
+% Se quiser usar o template oficial Tese UFG do Overleaf, copie o conteúdo
+% entre \begin{document} e \end{document} para lá, ajustando as seções
+% conforme a estrutura do template (frontmatter, mainmatter, etc.).
+% =============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+% Codificação e idioma
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+
+% Fonte Times Roman (padrão ABNT)
+\usepackage{mathptmx}
+
+% Margens ABNT (3 cm superior/esquerda, 2 cm inferior/direita)
+\usepackage[top=3cm, left=3cm, right=2cm, bottom=2cm]{geometry}
+
+% Espaçamento 1,5 entrelinhas
+\usepackage{setspace}
+\onehalfspacing
+
+% Indentação do primeiro parágrafo
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+
+% Tabelas e listas
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+
+% Links
+\usepackage[hidelinks]{hyperref}
+
+% Formatação de seções (caixa-alta no nível \section)
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\bfseries\large\MakeUppercase}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries\normalsize}{\thesubsection}{1em}{}
+
+% Sem indentação em itens de lista
+\setlist[itemize]{leftmargin=*}
+
+% =============================================================================
+\begin{document}
+
+% -------------------- Folha de rosto --------------------
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\large UNIVERSIDADE FEDERAL DE GOIÁS}\\[0.3cm]
+{\large PÓS-GRADUAÇÃO}\\[0.3cm]
+{\large DISCIPLINA INF0330 --- FRAMEWORK DE DESENVOLVIMENTO WEB PARA CONSUMO DE MODELOS TREINADOS DE INTELIGÊNCIA ARTIFICIAL}\\[3cm]
+
+{\Large \textbf{SISTEMA DE GESTÃO DE BIBLIOTECA COM RECOMENDAÇÕES}}\\[0.5cm]
+{\large Proposta de Trabalho da Disciplina}\\[3cm]
+
+\begin{flushright}
+\begin{minipage}{0.55\textwidth}
+\raggedright
+\textbf{Autores:}\\
+Antonio Jansen\\
+Givanildo Gramacho\\
+Jucelino Santos\\
+Ronny Marcelo\\
+Vanderson Darriba\\[0.8cm]
+
+\textbf{Professor:} Ronaldo M. da Costa
+\end{minipage}
+\end{flushright}
+
+\vfill
+{\large Goiânia, abril de 2026}
+
+\end{titlepage}
+
+% -------------------- Seção 1 --------------------
+\section{Componentes do Grupo}
+
+\begin{itemize}
+    \item Antonio Jansen
+    \item Givanildo Gramacho
+    \item Jucelino Santos
+    \item Ronny Marcelo
+    \item Vanderson Darriba
+\end{itemize}
+
+% -------------------- Seção 2 --------------------
+\section{Contextualização}
+
+A disciplina INF0330 tem como foco o desenvolvimento de aplicações web utilizando frameworks modernos, com ênfase na integração e consumo de modelos treinados de Inteligência Artificial em cenários reais de uso. O trabalho proposto neste documento busca atender diretamente essa ementa, combinando um sistema web tradicional (CRUD com autenticação, gestão de entidades e regras de negócio) com uma camada inteligente de recomendação baseada em modelo de linguagem treinado.
+
+% -------------------- Seção 3 --------------------
+\section{Definição do Trabalho}
+
+\subsection{Problema}
+
+Bibliotecas acadêmicas lidam diariamente com grandes acervos de livros, teses, dissertações e monografias. Os leitores (alunos, pesquisadores e docentes) enfrentam duas dificuldades recorrentes:
+
+\begin{enumerate}
+    \item A gestão operacional do acervo é trabalhosa sem um sistema digital adequado (cadastros, empréstimos, devoluções, controle de atrasos).
+    \item A descoberta de novas obras relevantes dentro do acervo é limitada, uma vez que os mecanismos tradicionais de busca dependem de correspondência exata por título ou autor, deixando de explorar relações semânticas entre os conteúdos.
+\end{enumerate}
+
+\subsection{Solução Proposta}
+
+Desenvolver um sistema web de gestão de biblioteca que cubra o ciclo completo de operação do acervo e que, adicionalmente, ofereça recomendações de leituras baseadas em similaridade semântica. O sistema utilizará um modelo treinado de representação textual para gerar sugestões personalizadas ao leitor, a partir do livro consultado e do seu histórico de empréstimos.
+
+\subsection{Objetivos}
+
+\noindent\textbf{Objetivo geral.} Construir uma aplicação web funcional e segura, desenvolvida com o framework Django, que integre um módulo de recomendação baseado em modelo treinado de Inteligência Artificial.
+
+\noindent\textbf{Objetivos específicos.}
+
+\begin{itemize}
+    \item Modelar e implementar o CRUD das entidades da biblioteca (pessoas, obras, empréstimos).
+    \item Implementar regras de negócio de empréstimo, devolução, controle de disponibilidade e atrasos.
+    \item Prover autenticação e autorização por perfis de usuário (bibliotecário, leitor e administrador).
+    \item Consumir um modelo treinado para gerar recomendações de obras por similaridade semântica.
+    \item Disponibilizar um painel de indicadores (\textit{dashboard}) com métricas operacionais do acervo.
+\end{itemize}
+
+% -------------------- Seção 4 --------------------
+\section{Escopo do Sistema}
+
+\subsection{Módulo CRUD (base operacional)}
+
+\noindent\textbf{Entidades.} Pessoa (bibliotecário e leitor), Livro (bibliografia, tese/dissertação, monografia) e Empréstimo.
+
+\noindent\textbf{Funcionalidades.}
+
+\begin{itemize}
+    \item Cadastro, edição, consulta e remoção das três entidades.
+    \item Autenticação com \textit{login} e grupos de permissão (Editor, Visualizador, Superusuário).
+    \item Regras de negócio no empréstimo: validação de disponibilidade do exemplar, validação de leitor ativo, cálculo automático da data de devolução prevista (14 dias) e atualização do acervo ao registrar devolução.
+    \item Cálculo de \textit{status} dinâmico do empréstimo (Emprestado, Devolvido, Atrasado).
+    \item Relatório de empréstimos atrasados.
+    \item \textit{Dashboard} com contadores e indicadores básicos.
+\end{itemize}
+
+\subsection{Módulo de Inteligência Artificial}
+
+\noindent\textbf{Funcionalidade principal: Recomendação por Similaridade Semântica.}
+
+\begin{itemize}
+    \item Gerar representações vetoriais (\textit{embeddings}) dos títulos e sinopses das obras do acervo.
+    \item Ao visualizar uma obra, apresentar ao leitor uma lista de obras similares do acervo com base na distância vetorial (similaridade cosseno).
+    \item Considerar o histórico de empréstimos do leitor para personalizar as sugestões.
+\end{itemize}
+
+\noindent\textbf{Modelos candidatos em avaliação.} \textit{Sentence-Transformers} (HuggingFace) para geração de \textit{embeddings} multilíngues. Modelos de linguagem abertos como Llama ou DeepSeek poderão ser avaliados para uma extensão conversacional. A escolha final será registrada após uma prova de conceito durante a primeira \textit{sprint} da fase de IA.
+
+\noindent\textbf{Extensão opcional.} Caso o cronograma permita, será implementado um assistente conversacional sobre o acervo, capaz de responder perguntas em linguagem natural a respeito da disponibilidade e do conteúdo das obras cadastradas.
+
+\subsection{Fora do Escopo}
+
+\begin{itemize}
+    \item Aplicação móvel nativa.
+    \item Integração com sistemas de pagamento ou cobrança automática de multas.
+    \item Digitalização do conteúdo integral das obras (somente metadados e sinopses).
+    \item Publicação em ambiente de produção com infraestrutura de nuvem gerenciada.
+\end{itemize}
+
+% -------------------- Seção 5 --------------------
+\section{Stack Tecnológica}
+
+\begin{itemize}
+    \item \textbf{Linguagem:} Python 3.x
+    \item \textbf{Framework web:} Django 4.2
+    \item \textbf{Banco de dados:} SQLite (desenvolvimento)
+    \item \textbf{Interface:} Bootstrap 5 via \textit{django-bootstrap-v5} e \textit{django-tables2}
+    \item \textbf{Autenticação:} sistema nativo do Django com grupos e permissões
+    \item \textbf{Camada de IA:} biblioteca \textit{Sentence-Transformers} (HuggingFace); avaliação de modelos abertos (Llama, DeepSeek) para extensão conversacional
+    \item \textbf{Controle de versão:} Git e GitHub
+    \item \textbf{Ambiente de apresentação:} servidor de desenvolvimento local
+\end{itemize}
+
+% -------------------- Seção 6 --------------------
+\section{Cronograma}
+
+O trabalho está organizado em quatro \textit{sprints}, totalizando aproximadamente sete semanas de execução, com entrega final prevista para 06 de junho de 2026.
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{} l l X @{}}
+\toprule
+\textbf{Sprint} & \textbf{Período} & \textbf{Entregas} \\
+\midrule
+Sprint 0 & 21/04 a 26/04 & Documento de proposta submetido \\
+Sprint 1 & 27/04 a 10/05 & Prova de conceito do módulo de recomendação; definição final do modelo \\
+Sprint 2 & 11/05 a 24/05 & Integração do módulo de recomendação ao CRUD; interface de sugestões \\
+Sprint 3 & 25/05 a 06/06 & Testes, \textit{dashboard} de métricas, revisão de segurança, documentação final e apresentação \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\vspace{0.3cm}
+
+Revisões semanais em grupo serão realizadas para acompanhamento de \textit{backlog}, alinhamento técnico e ajustes de escopo, se necessário.
+
+% -------------------- Seção 7 --------------------
+\section{Divisão de Responsabilidades}
+
+Todos os integrantes participam das decisões arquiteturais, das revisões de código e das retrospectivas de \textit{sprint}. Os papéis abaixo indicam a liderança de cada frente, e não exclusividade.
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{} l X @{}}
+\toprule
+\textbf{Integrante} & \textbf{Frente Principal} \\
+\midrule
+Antonio Jansen & Arquitetura do sistema, coordenação, redação e integração da camada de IA \\
+Jucelino Santos & \textit{Backend}, modelagem de dados, integração do motor de recomendação \\
+Givanildo Gramacho & Pesquisa, prova de conceito e avaliação dos modelos de IA \\
+Vanderson Darriba & Segurança, autenticação, conformidade e boas práticas \\
+Ronny Marcelo & Métricas, análise quantitativa e painel de indicadores \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% -------------------- Seção 8 --------------------
+\section{Resultados Esperados}
+
+Ao final da disciplina, o grupo entregará:
+
+\begin{itemize}
+    \item Uma aplicação web funcional para gestão de biblioteca, com autenticação, CRUD completo e regras de negócio implementadas.
+    \item Um módulo de recomendação por similaridade semântica integrado ao sistema, consumindo um modelo treinado de linguagem.
+    \item Documentação técnica do sistema, instruções de execução e relatório de avaliação da solução.
+    \item Apresentação demonstrando o funcionamento \textit{end-to-end} da aplicação.
+\end{itemize}
+
+\end{document}

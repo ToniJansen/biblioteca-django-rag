@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Migrations geradas (manter as versionadas, ignorar cache)
+# core/migrations/ e recomendador/migrations/ SAO versionados
+
+# Segredos
+.env
+.env.local
+.env.*.local
+
+# HuggingFace cache (modelo baixado fica em ~/.cache/huggingface)
+# nao precisa ignorar aqui pois fica fora do repo
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# LaTeX outputs (proposta)
+proposta/*.aux
+proposta/*.log
+proposta/*.out
+proposta/*.toc
+proposta/*.bbl
+proposta/*.blg
+proposta/*.synctex.gz
+proposta/*.fls
+proposta/*.fdb_latexmk
+
+# Recursos locais (não versionar)
+reunioes_requisitos/
+templates/

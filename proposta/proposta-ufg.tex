@@ -1,0 +1,475 @@
+% =============================================================================
+% Proposta de Trabalho - Disciplina INF0330 (UFG)
+% Sistema de Gestão de Biblioteca com Recomendações
+% =============================================================================
+
+\documentclass[monografia,abnt]{inf-ufg-modificado}
+
+% Pacotes adicionais não carregados pela classe UFG
+\usepackage{booktabs}   % \toprule, \midrule, \bottomrule
+
+\begin{document}
+
+%------------------------------------------ AUTOR, TÍTULO E DATA DE DEFESA %
+\autor{Antonio Jansen\\
+Givanildo Gramacho\\
+Jucelino Santos\\
+Ronny Marcelo\\
+Vanderson Darriba}
+\autorR{Jansen, Antonio}
+
+\titulo{Sistema de Gestão de Biblioteca com Recomendações}
+\subtitulo{Proposta de Trabalho da Disciplina INF0330}
+
+\cidade{Goiânia}
+\dia{26}
+\mes{04}
+\ano{2026}
+
+%-------------------------------------------------------------- ORIENTADOR %
+\orientador{Ronaldo M. da Costa}
+\orientadorR{Costa, Ronaldo M. da}
+
+%-------------------------------------------------- INSTITUIÇÃO E PROGRAMA %
+\universidade{Universidade Federal de Goiás}
+\uni{UFG}
+\unidade{Instituto de Informática}
+\departamento{}
+
+\programa{Pós-Graduação em Ciência da Computação}
+\concentracao{Sistemas de Computação}
+
+%-------------------------------------------------- ELEMENTOS PRÉ-TEXTUAIS %
+\capa
+\rosto
+
+\tabelas[]
+
+%--------------------------------------------------------------- CAPÍTULOS %
+
+\chapter{Componentes do Grupo}
+
+A equipe responsável pela concepção, desenvolvimento e entrega deste trabalho é formada por cinco estudantes da Pós-Graduação da Universidade Federal de Goiás. A composição multidisciplinar do grupo combina experiência em engenharia de software, arquitetura de dados, inteligência artificial, segurança da informação e análise estatística, o que fortalece a capacidade de execução da proposta em todas as suas frentes.
+
+\begin{itemize}
+    \item Antonio Jansen
+    \item Givanildo Gramacho
+    \item Jucelino Santos
+    \item Ronny Marcelo
+    \item Vanderson Darriba
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\chapter{Contextualização}
+
+Nos últimos anos, a maturação dos modelos de linguagem e dos modelos de representação vetorial (\textit{embeddings}) transformou a forma como aplicações web interagem com conteúdo textual. Sistemas que antes se limitavam a buscas por correspondência exata passaram a oferecer recomendações personalizadas, respostas em linguagem natural e ranqueamento semântico de informações, ampliando significativamente a experiência do usuário e o valor entregue por soluções digitais em praticamente todos os setores. A popularização de arquiteturas como \textit{Retrieval-Augmented Generation} (RAG), somada à maior disponibilidade de modelos abertos e à oferta crescente de \textit{APIs} de consumo, tornou a integração entre aplicações web tradicionais e modelos de IA treinados uma competência essencial do engenheiro de software contemporâneo.
+
+A disciplina INF0330 --- \textit{Framework de Desenvolvimento Web para Consumo de Modelos Treinados de Inteligência Artificial} --- tem como foco justamente essa intersecção: capacitar o desenvolvedor a projetar aplicações web modernas que integrem, de forma estruturada e segura, modelos de IA já treinados. A ementa enfatiza o uso de \textit{frameworks} maduros, a separação adequada de responsabilidades entre camadas da aplicação e a adoção de boas práticas de autenticação, modelagem e integração. O trabalho proposto neste documento foi concebido para exercitar todos esses elementos centrais em um único artefato coeso, combinando deliberadamente dois modelos de IA complementares: um modelo \textit{encoder} para busca semântica local e um modelo \textit{decoder} em nuvem para síntese conversacional.
+
+Como domínio de aplicação, o grupo escolheu o ambiente de bibliotecas acadêmicas. Esse cenário oferece três vantagens pedagógicas e práticas. Primeiro, apresenta regras de negócio claras e bem conhecidas, como cadastro de obras, empréstimos, devoluções e controle de atrasos. Segundo, oferece grande potencial para enriquecimento semântico, já que títulos, resumos e sumários são naturalmente textuais e ricos em significado. Terceiro, permite uso real e imediato dentro da própria universidade, o que viabiliza projetar desde o início um artefato potencialmente utilizável no dia a dia de leitores, pesquisadores e bibliotecários.
+
+A solução proposta combina, portanto, três eixos: uma aplicação web tradicional construída com o \textit{framework} Django (cadastros, autenticação, regras de negócio), uma camada de recomendação por similaridade semântica que executa localmente em CPU (consumindo um modelo \textit{encoder} treinado) e uma camada conversacional opcional baseada em RAG, que consulta uma \textit{API} de modelo generativo. O resultado é um projeto que atende simultaneamente ao conteúdo da disciplina, às boas práticas de engenharia de software e a uma necessidade concreta do ambiente acadêmico.
+
+% -----------------------------------------------------------------------------
+\chapter{Definição do Trabalho}
+
+\section{Problema}
+
+Bibliotecas acadêmicas lidam diariamente com grandes acervos de livros, teses, dissertações e monografias. Nesse contexto, leitores (alunos, pesquisadores e docentes) e bibliotecários enfrentam um conjunto recorrente de dificuldades operacionais e informacionais:
+
+\begin{enumerate}
+    \item \textbf{Gestão operacional manual ou dispersa.} Sem um sistema digital adequado, o ciclo de cadastro de obras, registro de empréstimos, acompanhamento de devoluções e controle de atrasos torna-se trabalhoso, propenso a erros e difícil de auditar.
+    \item \textbf{Busca limitada por correspondência exata.} Mecanismos tradicionais de busca dependem do usuário saber previamente o título ou o autor exatos, o que dificulta a descoberta de obras relevantes quando o interesse está em um tema ou área de conhecimento, e não em um livro específico.
+    \item \textbf{Baixa descobribilidade de obras relacionadas.} Mesmo quando o leitor encontra uma obra de interesse, o sistema não sugere naturalmente outras com temática próxima, deixando grande parte do acervo invisível durante a consulta.
+    \item \textbf{Ausência de personalização.} Perfis de leitura são ignorados. Alunos com interesses distintos recebem a mesma experiência de busca, sem qualquer aproveitamento do histórico de empréstimos para direcionar sugestões.
+    \item \textbf{Ausência de visão agregada.} Bibliotecários carecem de indicadores consolidados sobre o uso do acervo: áreas mais buscadas, obras mais emprestadas, percentual de atrasos, leitores ativos e lacunas de cobertura temática.
+    \item \textbf{Interação restrita a formulários.} Consultas conversacionais em linguagem natural, que poderiam acelerar perguntas como ``quantas teses de 2024 temos?'' ou ``quais livros temos sobre redes neurais?'', ficam fora do alcance do usuário comum.
+\end{enumerate}
+
+\section{Justificativa}
+
+A escolha do domínio e da abordagem técnica se apoia em três justificativas articuladas.
+
+\noindent\textbf{Por que biblioteca.} Trata-se de um domínio com regras de negócio claras, operação previsível e alto grau de familiaridade para qualquer aluno de pós-graduação. O risco de o grupo se perder em ambiguidades de requisito é baixo, o que libera energia para concentração nos aspectos verdadeiramente desafiadores do trabalho: a integração com IA e a disciplina de engenharia de software. Além disso, o conteúdo manipulado é naturalmente textual, o que casa bem com técnicas de representação vetorial.
+
+\noindent\textbf{Por que recomendação semântica e assistente conversacional.} A combinação das duas \textit{features} é uma aplicação direta, defensável e auditável de modelos de IA treinados. Ela permite demonstrar, em um único fluxo de usuário, as etapas centrais de consumo de modelos: preparação de texto, geração de \textit{embeddings}, armazenamento vetorial, cálculo de similaridade, montagem de \textit{prompt} com contexto e síntese de resposta. O valor percebido pelo usuário é imediato, e a feature se presta a avaliações quantitativas de qualidade.
+
+\noindent\textbf{Por que Django.} Django é um \textit{framework} web maduro, com comunidade ativa, documentação robusta e ciclo de vida de liberação estável. Seu modelo arquitetural \textit{Model-View-Template} (MVT) impõe separação de responsabilidades clara, o que se alinha com o objetivo pedagógico da disciplina. Oferece nativamente ORM, sistema de autenticação com grupos e permissões, interface administrativa automática e ampla biblioteca de pacotes de terceiros. Essas características aceleram a construção do CRUD base e deixam o time com tempo suficiente para se dedicar à camada de IA.
+
+\section{Solução Proposta}
+
+Desenvolver um sistema web de gestão de biblioteca que cubra o ciclo completo de operação do acervo e que, adicionalmente, ofereça recomendações de leituras e um assistente conversacional sobre o conteúdo catalogado. A solução é composta por três camadas principais que operam sobre a mesma base de dados:
+
+\begin{itemize}
+    \item \textbf{Camada web} (Django): responsável pelo CRUD das entidades do domínio, autenticação e autorização por grupos, regras de negócio do empréstimo, relatórios operacionais e \textit{dashboard} de indicadores.
+    \item \textbf{Camada de recomendação local} (Sentence-Transformers): responsável pela indexação vetorial do acervo, pelo cálculo de similaridade entre obras e pela geração de sugestões personalizadas, considerando o histórico de empréstimos do leitor. Roda \textit{offline}, em CPU, sem dependência de serviços externos.
+    \item \textbf{Camada conversacional em nuvem} (Groq): responsável pelo pipeline de \textit{Retrieval-Augmented Generation}, que combina a busca semântica local com a síntese de respostas em linguagem natural via modelo generativo. Esta camada é acionada apenas quando o usuário faz uma pergunta explícita ao assistente.
+\end{itemize}
+
+Essa separação torna cada camada plugável: o modelo \textit{encoder} e o modelo generativo podem ser substituídos ou refinados de forma independente, preservando a integridade da aplicação web.
+
+\section{Objetivos}
+
+\noindent\textbf{Objetivo geral.} Construir uma aplicação web funcional, segura e extensível, desenvolvida com o \textit{framework} Django, que integre de forma coordenada dois modelos treinados de Inteligência Artificial: um \textit{encoder} para busca semântica e um modelo generativo para síntese conversacional.
+
+\noindent\textbf{Objetivos específicos.}
+
+\begin{itemize}
+    \item Modelar e implementar o CRUD das entidades da biblioteca (pessoas, obras, empréstimos).
+    \item Implementar regras de negócio de empréstimo, devolução, controle de disponibilidade e atrasos, com validação adequada.
+    \item Prover autenticação e autorização por perfis de usuário (bibliotecário, leitor e administrador), com controle de acesso granular.
+    \item Projetar e consumir um modelo \textit{encoder} treinado para gerar recomendações de obras por similaridade semântica.
+    \item Projetar e consumir um modelo generativo em nuvem para responder perguntas em linguagem natural sobre o acervo, via pipeline RAG.
+    \item Aplicar práticas de \textit{defense-in-depth} na camada conversacional, protegendo o sistema contra injeção de \textit{prompts} e indução a temas fora de escopo.
+    \item Disponibilizar um painel de indicadores com métricas operacionais relevantes para a gestão do acervo.
+    \item Praticar processos de engenharia de software (versionamento, revisão de código, testes automatizados e documentação).
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\chapter{Fundamentação Técnica}
+
+Esta seção apresenta, de forma sintética, os conceitos e tecnologias centrais que sustentam a solução proposta.
+
+\section{Django e o padrão Model-View-Template}
+
+Django é um \textit{framework} web de alto nível escrito em Python, projetado para promover desenvolvimento rápido e código limpo. Seu modelo arquitetural é frequentemente descrito como \textit{Model-View-Template} (MVT), uma variação do clássico MVC em que o componente de \textit{controller} é gerenciado pelo próprio \textit{framework}. No Django, \textit{Models} encapsulam a camada de persistência e regras de domínio; \textit{Views} implementam a lógica de aplicação, respondendo a requisições HTTP; e \textit{Templates} cuidam da renderização da interface.
+
+A escolha do Django neste trabalho se apoia em três pilares: maturidade, produtividade e segurança por padrão. A maturidade do \textit{framework} reduz o risco técnico; sua produtividade, expressa em recursos como ORM, \textit{migrations}, \textit{admin} automático, \textit{signals} e sistema de autenticação nativo, acelera a entrega do CRUD; e a atenção histórica do projeto à segurança --- proteção contra CSRF, XSS, SQL Injection e configuração segura de \textit{cookies} de sessão --- estabelece uma base sólida para a aplicação.
+
+\section{Embeddings e Sentence-Transformers}
+
+\textit{Embeddings} são representações vetoriais densas de elementos textuais, como palavras, sentenças ou documentos. Em um espaço de \textit{embeddings} bem treinado, a proximidade geométrica entre dois vetores reflete a proximidade semântica entre os textos que eles representam. Essa propriedade viabiliza tarefas como busca semântica, agrupamento e recomendação baseadas em conteúdo.
+
+Sentence-Transformers é uma biblioteca Python, baseada em modelos \textit{transformer}, que oferece modelos pré-treinados para geração de \textit{embeddings} de sentenças e parágrafos. O modelo adotado neste trabalho é o \texttt{paraphrase-multilingual-MiniLM-L12-v2}, disponibilizado publicamente pelo HuggingFace Hub. Trata-se de um modelo multilíngue, treinado para gerar representações comparáveis em diferentes idiomas --- característica relevante para um acervo acadêmico que frequentemente mistura material em português e inglês. O modelo produz vetores de 384 dimensões e, na arquitetura adotada, é baixado uma única vez (cerca de 420 MB) e executado localmente em CPU, sem necessidade de GPU ou chamadas de rede.
+
+\section{Similaridade Cosseno e Recomendação Baseada em Conteúdo}
+
+Dada a representação vetorial das obras do acervo, a recomendação pode ser formulada como um problema de busca por vizinhos próximos. A métrica de similaridade cosseno, que mede o cosseno do ângulo entre dois vetores, é amplamente adotada nesse contexto por ser robusta a diferenças de norma entre os vetores e por ter uma interpretação geométrica simples.
+
+A abordagem utilizada será a de \textit{recomendação baseada em conteúdo}, na qual o sistema sugere obras semelhantes àquelas que o usuário demonstrou interesse, sem depender de dados de outros usuários. Essa escolha atende adequadamente ao problema (em uma biblioteca acadêmica, o usuário frequentemente busca por tema) e evita os desafios associados a métodos colaborativos, como o problema do início a frio e a necessidade de grandes volumes de histórico. Para personalização, o vetor-alvo do leitor é calculado como a média dos \textit{embeddings} das obras já tomadas emprestado, gerando sugestões alinhadas ao padrão de leitura individual.
+
+\section{Retrieval-Augmented Generation (RAG)}
+
+\textit{Retrieval-Augmented Generation} é um padrão arquitetural que combina duas capacidades: a recuperação de conteúdo relevante a partir de uma base indexada e a geração de respostas em linguagem natural a partir desse conteúdo. Na solução proposta, a mesma indexação vetorial usada para recomendação é reaproveitada para alimentar o pipeline RAG: a pergunta do usuário é convertida em \textit{embedding} pelo mesmo modelo \textit{encoder}, o acervo é ranqueado por similaridade com a pergunta, e o conjunto de obras mais relevantes é enviado como contexto estruturado ao modelo generativo em nuvem, que produz a resposta final em português. Essa arquitetura tem duas vantagens importantes: garante que a resposta esteja ancorada em dados reais do acervo (reduzindo alucinações) e permite que a resposta cite explicitamente as obras utilizadas, viabilizando rastreabilidade.
+
+\section{Privacidade, LGPD e Segurança de Modelos}
+
+Sistemas que registram dados de leitores e histórico de empréstimos se enquadram no escopo da Lei Geral de Proteção de Dados Pessoais (Lei no 13.709/2018). O trabalho adotará, desde o início, boas práticas alinhadas à LGPD: minimização de dados coletados, controle de acesso por perfil, proteção de sessão, ausência de dados sensíveis desnecessários e registro auditável de operações.
+
+Adicionalmente, a camada conversacional introduz uma superfície de ataque específica, que exige atenção particular: a \textit{injeção de prompts}, a indução a respostas fora de escopo, tentativas de troca de persona do assistente e pedidos de revelação de \textit{system prompt}. A solução aplica \textit{defense-in-depth} com cinco camadas coordenadas, descritas na seção de Segurança deste documento.
+
+% -----------------------------------------------------------------------------
+\chapter{Escopo do Sistema}
+
+\section{Módulo CRUD (base operacional)}
+
+\noindent\textbf{Entidades.} Três entidades compõem o núcleo do modelo de domínio:
+
+\begin{itemize}
+    \item \texttt{pessoa}: atributos \texttt{nome}, \texttt{email}, \texttt{celular}, \texttt{funcao} (\texttt{Leitor} ou \texttt{Bibliotecario}), \texttt{nascimento} e \texttt{ativo}.
+    \item \texttt{livro}: atributos \texttt{titulo}, \texttt{autor}, \texttt{tipo\_obra} (\texttt{BIBLIOGRAFIA}, \texttt{TESE\_DISSERTACAO} ou \texttt{MONOGRAFIA}), \texttt{isbn}, \texttt{ano}, \texttt{exemplares\_total} e \texttt{exemplares\_disponiveis}.
+    \item \texttt{emprestimo}: relaciona um \texttt{livro} a um \texttt{leitor} (restrito a pessoas com função Leitor), com \texttt{data\_saida}, \texttt{data\_devolucao\_prevista} e \texttt{data\_devolucao\_real}.
+\end{itemize}
+
+\noindent\textbf{Funcionalidades previstas.}
+
+\begin{itemize}
+    \item Cadastro, edição, consulta e remoção das três entidades, com formulários validados e listagens paginadas (dez itens por página).
+    \item Autenticação com \textit{login} e senha e autorização baseada em grupos: \texttt{Editor} (bibliotecário com CRUD completo exceto \textit{delete}), \texttt{Visualizador} (leitor com permissões de consulta) e \texttt{Superusuário} (acesso total via \textit{admin} nativo).
+    \item Regras de negócio no empréstimo: validação de disponibilidade do exemplar, validação do estado ativo do leitor, cálculo automático da data de devolução prevista (14 dias corridos) e atualização do acervo ao registrar a devolução.
+    \item Cálculo de \textit{status} dinâmico do empréstimo, derivado em tempo de consulta e não persistido: \textit{Emprestado}, \textit{Devolvido} e \textit{Atrasado}.
+    \item Relatório de empréstimos atrasados, com acesso direto à ação de registrar devolução.
+    \item \textit{Dashboard} com contadores e indicadores básicos (total de obras, total de leitores, empréstimos ativos, empréstimos atrasados e distribuição por tipo de obra).
+\end{itemize}
+
+\section{Módulo de Inteligência Artificial}
+
+O módulo de IA é composto por duas fases que consomem modelos treinados distintos, cada um adequado à sua função.
+
+\subsection{Fase 1 --- Recomendação por Similaridade Semântica (HuggingFace)}
+
+A recomendação de obras foi arquitetada para consumir o modelo pré-treinado \texttt{paraphrase-multilingual-MiniLM-L12-v2}, disponibilizado publicamente pelo HuggingFace Hub por meio da biblioteca \texttt{sentence-transformers}. O pipeline funciona em quatro passos:
+
+\begin{enumerate}
+    \item \textbf{Geração de \textit{embeddings}.} Para cada obra cadastrada, o texto formado pela concatenação de título, autor e tipo de obra é convertido em um vetor de 384 dimensões. O cálculo é disparado automaticamente por um \textit{signal} do Django sempre que uma obra é criada ou editada (\texttt{post\_save}).
+    \item \textbf{Armazenamento.} O vetor é persistido em um campo binário (\texttt{BinaryField}) no próprio banco SQLite, vinculado à chave primária da obra por meio do modelo \texttt{LivroEmbedding} (relação \texttt{OneToOne} com \texttt{livro}).
+    \item \textbf{Busca por similaridade.} Ao acessar a página de detalhe de uma obra, o sistema carrega todos os vetores do acervo em memória (via \textit{numpy}), calcula a similaridade cosseno entre o vetor-alvo e os demais e retorna as cinco obras mais próximas, excluindo a própria obra alvo.
+    \item \textbf{Personalização.} Para leitores com histórico de empréstimos, é calculada a média dos vetores das obras já tomadas emprestado; o resultado é então utilizado como vetor-alvo, gerando recomendações baseadas no padrão de leitura individual.
+\end{enumerate}
+
+Essa fase concretiza o requisito da disciplina de consumir um modelo treinado de IA, com ênfase em execução local, gratuita e \textit{offline} após o \textit{download} inicial do modelo.
+
+\subsection{Fase 2 --- Assistente Conversacional via RAG (Groq)}
+
+A camada conversacional consome a \textit{API} da plataforma \textbf{Groq}, que hospeda modelos abertos das famílias Llama, DeepSeek, Gemma e Mixtral, expondo uma interface REST compatível com o padrão OpenAI. O modelo escolhido como primeiro candidato é o \texttt{llama-3.3-70b-versatile}, em virtude de sua qualidade em português brasileiro e da latência reduzida da arquitetura LPU da Groq.
+
+A implementação segue o padrão RAG, combinando as duas camadas de IA:
+
+\begin{enumerate}
+    \item O usuário digita uma pergunta em linguagem natural.
+    \item A pergunta é vetorizada pelo mesmo modelo MiniLM da Fase 1.
+    \item \textbf{Estratégia de recuperação híbrida.} Para acervos de até 200 obras (escopo deste MVP), o contexto enviado ao modelo generativo é o acervo inteiro, ordenado por similaridade semântica com a pergunta. Essa decisão permite responder com precisão consultas temáticas (``livros sobre redes neurais''), consultas de metadados (``quantas teses de 2024 temos?'') e até consultas agregativas (``quais autores aparecem mais vezes no acervo''). Acima de 200 obras, o sistema recua para busca por \textit{top-k} mais similares (\textit{k}=30).
+    \item Um \textit{prompt} é montado com a pergunta do usuário e os metadados das obras (título, autor, tipo, ano, ISBN, exemplares disponíveis) como contexto estruturado.
+    \item A \textit{API} da Groq é chamada com parâmetros conservadores: \texttt{temperature=0.2}, \texttt{max\_tokens=600}, \texttt{top\_p=0.9}.
+    \item A interface exibe a resposta textual ao lado da lista de obras citadas pelo modelo, com \textit{links} diretos para suas páginas de detalhe. As citações seguem o formato \texttt{(Obra \#N)}, extraído por expressão regular.
+\end{enumerate}
+
+\noindent\textbf{Justificativa da escolha da plataforma Groq.} O serviço oferece um \textit{tier} gratuito suficiente para demonstração acadêmica; a \textit{API} compatível com OpenAI facilita a troca futura de provedor; a disponibilidade de modelos abertos (Llama e Gemma) mantém o projeto alinhado ao princípio do curso de consumir modelos treinados sem \textit{lock-in} proprietário; e a latência baixa é crítica para a experiência conversacional fluida.
+
+\noindent\textbf{Alternativas avaliadas.} HuggingFace Inference \textit{API} (\textit{tier} gratuito mais limitado), Google Gemini (boa qualidade mas proprietário), Ollama local (totalmente \textit{offline} mas lento em CPU) e OpenAI/Anthropic (pagos). A decisão final pela Groq será formalizada em ADR-002 no início da Sprint 2.
+
+\subsection{Diferença entre as Duas Camadas}
+
+As duas camadas cumprem funções complementares, e a combinação é deliberada: o modelo \textit{encoder} da HuggingFace realiza a busca semântica no acervo (rápida, local, sempre disponível); o modelo generativo da Groq apenas sintetiza a resposta final ao usuário (na nuvem, somente quando há pergunta explícita). Essa divisão minimiza custo, latência e dependência de rede, preservando a qualidade da resposta conversacional.
+
+\begin{center}
+\begin{tabular}{@{} l p{4.8cm} p{4.8cm} @{}}
+\toprule
+\textbf{Aspecto} & \textbf{Fase 1 --- MiniLM (HuggingFace)} & \textbf{Fase 2 --- Llama 3.3 (Groq)} \\
+\midrule
+Tipo de modelo & \textit{Encoder} (\textit{embeddings}) & \textit{Decoder} (generativo) \\
+Tarefa & Similaridade semântica & Síntese de texto em linguagem natural \\
+Execução & Local, em CPU & Nuvem, LPU customizada \\
+Custo & Gratuito, \textit{offline} & Gratuito com limite de requisições \\
+Tempo típico de resposta & $\sim$100 ms & 1 a 2 segundos \\
+Uso de rede & Apenas no primeiro \textit{download} & A cada pergunta do usuário \\
+Dependência externa & Nenhuma após \textit{download} & \textit{Endpoint} Groq disponível \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Fora do Escopo}
+
+A delimitação do escopo é tão importante quanto sua definição. O trabalho não contemplará, na presente entrega:
+
+\begin{itemize}
+    \item Desenvolvimento de aplicação móvel nativa.
+    \item Integração com sistemas de pagamento ou cobrança automática de multas.
+    \item Digitalização integral do conteúdo das obras, restringindo-se a metadados, sinopses e sumários.
+    \item Publicação em ambiente de produção com infraestrutura de nuvem gerenciada, mantendo-se em ambiente de desenvolvimento e apresentação local.
+    \item Treinamento de novos modelos de IA a partir do zero --- o trabalho se limita ao \textit{consumo} de modelos treinados, em consonância com a ementa da disciplina.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\chapter{Arquitetura e Modelo de Dados}
+
+\section{Visão Geral Arquitetural}
+
+A aplicação segue arquitetura em camadas, com responsabilidades bem delimitadas e acoplamento reduzido entre módulos. O fluxo de requisição HTTP típico passa por Django (URL dispatcher $\rightarrow$ View), que decide se a requisição é de CRUD puro ou se envolve consulta à camada de recomendação ou ao chat conversacional. Em ambos os casos, os dados operacionais permanecem na mesma base SQLite, e os \textit{embeddings} são consultados diretamente pelo código Python via ORM.
+
+Do ponto de vista de módulos Python, o projeto é organizado em duas aplicações Django: \texttt{core}, que concentra o CRUD, a autenticação e a UI; e \texttt{recomendador}, que encapsula a lógica de IA (geração de \textit{embeddings}, serviços de recomendação, pipeline RAG, guardrails de segurança e comandos de \textit{bootstrap}). Essa separação é deliberada e permite evoluir a camada de IA sem impactar o CRUD.
+
+\section{Modelo de Dados}
+
+O núcleo de domínio possui três entidades operacionais (\texttt{pessoa}, \texttt{livro} e \texttt{emprestimo}) e uma entidade de suporte (\texttt{LivroEmbedding}), associada 1-para-1 à entidade \texttt{livro}:
+
+\begin{itemize}
+    \item \texttt{pessoa} $\leftarrow$ 1:N $\rightarrow$ \texttt{emprestimo}, através da chave estrangeira \texttt{leitor}.
+    \item \texttt{livro} $\leftarrow$ 1:N $\rightarrow$ \texttt{emprestimo}, através da chave estrangeira \texttt{livro}.
+    \item \texttt{livro} $\leftarrow$ 1:1 $\rightarrow$ \texttt{LivroEmbedding}, chave primária compartilhada.
+\end{itemize}
+
+\noindent A entidade \texttt{LivroEmbedding} persiste: \texttt{vetor} (\texttt{BinaryField}, \texttt{float32} com 384 dimensões), \texttt{texto\_fonte} (texto original usado para gerar o \textit{embedding}), \texttt{modelo\_versao} (versão do modelo), \texttt{dimensao} (384) e \texttt{atualizado\_em} (\texttt{DateTimeField}, auto).
+
+\section{Fluxo de Recomendação (Fase 1)}
+
+Ao acessar a página de detalhe de uma obra (\texttt{GET /livro/detail/<id>/}), a \texttt{LivroDetailView} invoca o serviço \texttt{recomendar\_livros(pk, top\_k=5)}, que carrega todos os vetores de \texttt{LivroEmbedding} em uma matriz \textit{numpy} (N x 384), realiza o produto matricial com o vetor-alvo, ordena de forma descendente, exclui o próprio \texttt{pk} e retorna os cinco livros mais próximos. Para acervos de algumas dezenas de obras, a operação completa leva menos de um milissegundo.
+
+\section{Fluxo Conversacional (Fase 2)}
+
+A rota \texttt{POST /chat/} encaminha a pergunta à função \texttt{responder\_pergunta(p)}, que aciona o pipeline RAG em quatro estágios: sanitização da entrada (camada L1), montagem de \textit{prompt} (camadas L2 e L3), chamada à Groq com parâmetros endurecidos (L4) e pós-processamento da resposta (L5). O resultado é um objeto \texttt{RespostaChat} com os campos \texttt{texto}, \texttt{obras\_citadas} e \texttt{confianca}, consumido pela \textit{view} para renderização do \textit{template}.
+
+% -----------------------------------------------------------------------------
+\chapter{Segurança e Guardrails}
+
+A camada conversacional introduz uma superfície de ataque específica que exige atenção particular. A solução adota \textit{defense-in-depth} com cinco camadas coordenadas, cada uma oferecendo uma linha de defesa complementar às demais:
+
+\begin{itemize}
+    \item \textbf{L1 --- Sanitização da entrada.} A pergunta do usuário passa por \texttt{\_sanitizar\_pergunta}, que aplica limite de 1000 caracteres, remove caracteres de controle e compara com 15 padrões de injeção conhecidos. Ocorrências suspeitas são registradas via \texttt{logger.warning}.
+    \item \textbf{L2 --- \textit{System prompt} endurecido.} Nove regras inegociáveis cobrem escopo estrito (só responder sobre o acervo), antialucinação (não inventar dados não apresentados), bloqueio de troca de persona, fixação do idioma em português brasileiro, recusa padronizada de temas sensíveis (diagnósticos médicos, pareceres jurídicos, aconselhamento financeiro, opiniões políticas) e confidencialidade do próprio \textit{prompt}.
+    \item \textbf{L3 --- Delimitadores explícitos.} A pergunta do usuário é encapsulada dentro de delimitadores específicos (\texttt{<<<PERGUNTA>>> ... <<</PERGUNTA>>>}), tratada explicitamente como dado e não como instrução.
+    \item \textbf{L4 --- Parâmetros conservadores.} As chamadas ao modelo generativo usam \texttt{temperature=0.2} e \texttt{top\_p=0.9}, reduzindo a variabilidade de saída e minimizando a improvisação.
+    \item \textbf{L5 --- Pós-processamento.} A função \texttt{\_eh\_recusa} detecta a frase canônica de recusa na saída do modelo. Quando ela aparece, o campo \texttt{confianca} é zerado e as citações aleatórias eventualmente produzidas são descartadas, evitando que a interface exiba obras não relacionadas à pergunta.
+\end{itemize}
+
+\noindent\textbf{Validação adversarial.} O conjunto foi submetido a sete casos de teste adversariais: pergunta legítima, tema fora do escopo, injeção clássica de instruções, \textit{jailbreak} de persona com tema sensível, tentativa de troca de idioma, pedido educado de revelação do \textit{prompt} do sistema e pergunta de saúde induzindo a diagnóstico. Em todos os sete, o comportamento foi o esperado: recusa educada, idioma preservado e ausência de citações.
+
+% -----------------------------------------------------------------------------
+\chapter{Metodologia}
+
+O trabalho adotará uma abordagem ágil adaptada ao contexto acadêmico, inspirada em práticas de Scrum e Kanban. O ciclo de desenvolvimento será organizado em \textit{sprints} de aproximadamente duas semanas, cada uma com escopo definido, objetivos mensuráveis e entregas revisáveis.
+
+\noindent\textbf{Gestão do trabalho.} O \textit{backlog} é mantido em formato leve (lista priorizada de itens com descrição clara, critério de aceite e responsável), acessível a todos os integrantes. Reuniões periódicas do grupo servem para alinhamento de progresso, revisão de prioridades e decisão coletiva de impedimentos. Ao final de cada \textit{sprint}, uma retrospectiva curta registra aprendizados e ajustes de processo.
+
+\noindent\textbf{Controle de versão e revisão de código.} O projeto utiliza Git com repositório remoto no GitHub. A política adota \textit{branches} curtas, \textit{pull requests} para integração na \textit{main} e revisão cruzada entre ao menos dois integrantes antes do \textit{merge}. Essa prática protege a base de código de regressões e promove a disseminação de conhecimento entre o time.
+
+\noindent\textbf{Testes automatizados.} Testes unitários cobrem as regras de negócio e os serviços da camada de IA. A \textit{suite} atual contempla nove casos para o módulo \texttt{recomendador} (cobrindo geração de texto-fonte, determinismo de \textit{embeddings}, \textit{top-k}, exclusão da obra-alvo e personalização por leitor), executados com \texttt{django.test} em modo \textit{mock} (sem rede), totalizando aproximadamente 32 ms de tempo de execução. Novos testes de \textit{view} e de pipeline RAG estão planejados para as \textit{sprints} seguintes.
+
+\noindent\textbf{Documentação contínua.} A documentação técnica é construída em paralelo ao código, incluindo \textit{README} executável (\textit{setup}, execução, \textit{seed} e testes), descrição dos modelos, diagrama de classes, notas de decisões arquiteturais (ADRs), inventário de \textit{features} do MVP, critérios de avaliação qualitativa e relatório de segurança do chat.
+
+\noindent\textbf{Qualidade de código.} Convenções de estilo PEP 8 para Python, nomenclatura consistente em português para modelos do domínio e uso de \textit{linters}/formatadores (\texttt{ruff}, \texttt{black}) padronizam o código e reduzem discussões estéticas nas revisões.
+
+% -----------------------------------------------------------------------------
+\chapter{Stack Tecnológica}
+
+A \textit{stack} foi escolhida buscando o equilíbrio entre maturidade, produtividade e aderência à ementa da disciplina:
+
+\begin{itemize}
+    \item \textbf{Linguagem:} Python 3.x --- linguagem de referência em Django e no ecossistema de Ciência de Dados e IA.
+    \item \textbf{Framework web:} Django 4.2 --- \textit{framework} maduro, com ORM, \textit{admin} automático e sistema de autenticação nativo.
+    \item \textbf{Banco de dados:} SQLite --- adequado ao ambiente de desenvolvimento e apresentação, com possibilidade de evolução futura para PostgreSQL sem reescrita de código aplicacional.
+    \item \textbf{Interface:} Bootstrap 5, via \texttt{django-bootstrap-v5}, com \texttt{django-tables2} para listagens ricas e \textit{badges} coloridas para tipos de obra e \textit{status} de empréstimo.
+    \item \textbf{Autenticação:} sistema nativo do Django, estendido com grupos \texttt{Editor} e \texttt{Visualizador}.
+    \item \textbf{Camada \textit{encoder}:} biblioteca \texttt{sentence-transformers} (HuggingFace) com o modelo \texttt{paraphrase-multilingual-MiniLM-L12-v2}.
+    \item \textbf{Camada generativa:} \textit{API} da Groq, modelo \texttt{llama-3.3-70b-versatile} (parâmetros \texttt{temperature=0.2}, \texttt{max\_tokens=600}, \texttt{top\_p=0.9}).
+    \item \textbf{Processamento vetorial:} \texttt{numpy} para cálculo de similaridade cosseno em memória.
+    \item \textbf{Controle de versão:} Git com hospedagem no GitHub, \textit{branches} temáticas.
+    \item \textbf{Testes:} \texttt{pytest} e \texttt{django.test}.
+    \item \textbf{Qualidade de código:} \texttt{ruff} e \texttt{black}.
+    \item \textbf{Ambiente de apresentação:} servidor de desenvolvimento local, com \texttt{seed.py} idempotente gerando dados de demonstração (30 obras, 4 pessoas, 3 empréstimos).
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\chapter{Cronograma}
+
+O trabalho está organizado em quatro \textit{sprints}, totalizando aproximadamente sete semanas de execução, com entrega final prevista para 06 de junho de 2026. O desenho das \textit{sprints} busca equilibrar entregas verticais (cada \textit{sprint} produz algo demonstrável) e progressão técnica (cada \textit{sprint} se apoia na anterior).
+
+\begin{center}
+\begin{tabular}{@{} l l p{7cm} @{}}
+\toprule
+\textbf{Sprint} & \textbf{Período} & \textbf{Entregas} \\
+\midrule
+Sprint 0 & 21/04 a 26/04 & Submissão do documento de proposta. Alinhamento de escopo e backlog. \\
+Sprint 1 & 27/04 a 10/05 & Prova de conceito e integração da Fase 1 (recomendação por similaridade). Modelagem concluída. \\
+Sprint 2 & 11/05 a 24/05 & Integração da Fase 2 (assistente RAG com Groq). Defense-in-depth e testes adversariais. \\
+Sprint 3 & 25/05 a 06/06 & Refinamentos, \textit{dashboard} de métricas, cobertura final de testes, documentação e apresentação. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Cerimônias.} Revisões semanais em grupo para acompanhamento de \textit{backlog}, alinhamento técnico e identificação antecipada de impedimentos. Retrospectiva curta ao final de cada \textit{sprint}, registrando aprendizados e ajustes para o ciclo seguinte.
+
+% -----------------------------------------------------------------------------
+\chapter{Divisão de Responsabilidades}
+
+A divisão abaixo indica a liderança de cada frente, e não exclusividade. Todos os integrantes participam das decisões arquiteturais, das revisões de código, das retrospectivas de \textit{sprint} e do esforço de integração.
+
+\begin{center}
+\begin{tabular}{@{} l p{10cm} @{}}
+\toprule
+\textbf{Integrante} & \textbf{Frente Principal} \\
+\midrule
+Antonio Jansen & Arquitetura do sistema, coordenação do grupo, redação e integração da camada de IA com o restante da aplicação. \\
+Jucelino Santos & Desenvolvimento \textit{backend}, modelagem de dados, integração do motor de recomendação ao Django. \\
+Givanildo Gramacho & Pesquisa aplicada, prova de conceito dos módulos de IA, avaliação de modelos e \textit{benchmarks}. \\
+Vanderson Darriba & Segurança, autenticação, \textit{guardrails} do chat, conformidade LGPD e revisão de boas práticas. \\
+Ronny Marcelo & Métricas, análise quantitativa da recomendação e construção do painel de indicadores. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent A colaboração cruzada é promovida desde o início: cada \textit{pull request} passa por revisão de pelo menos um outro integrante, preferencialmente fora da frente principal do autor, para garantir coesão arquitetural e disseminação de conhecimento.
+
+% -----------------------------------------------------------------------------
+\chapter{Status da Implementação}
+
+Esta seção resume o estado atual do artefato, com foco em marcos técnicos já concluídos, métricas mensuradas e pontos de atenção identificados.
+
+\section{Marcos Concluídos}
+
+\begin{itemize}
+    \item Modelagem, \textit{migrations} e CRUD completos para \texttt{pessoa}, \texttt{livro} e \texttt{emprestimo}.
+    \item Autenticação com grupos \texttt{Editor} e \texttt{Visualizador}, controle por \texttt{LoginRequiredMixin} nas CBVs.
+    \item Regras de negócio do empréstimo implementadas em \texttt{save()}: validação de exemplar disponível, validação do leitor ativo, cálculo automático da data de devolução prevista e retorno do exemplar ao acervo na devolução.
+    \item \textit{Dashboard} com sete cartões de métricas operacionais.
+    \item Fase 1 concluída: \texttt{LivroEmbedding}, pipeline de geração via \textit{signal}, persistência em \texttt{BinaryField}, serviços \texttt{recomendar\_livros} e \texttt{recomendar\_para\_leitor}, integração na \texttt{LivroDetailView} e comando de \textit{bootstrap} \texttt{gerar\_embeddings}.
+    \item Fase 2 concluída: pipeline RAG com \textit{retrieval} híbrido, cinco camadas de \textit{defense-in-depth} e integração com a \textit{API} Groq.
+    \item Suite de testes automatizados com nove casos executados em aproximadamente 32 ms, em modo \textit{mock} (sem dependência de rede).
+    \item \textit{Seed} idempotente com superusuário, grupos, quatro pessoas, 30 obras e três empréstimos de demonstração.
+\end{itemize}
+
+\section{Métricas Mensuradas}
+
+\begin{itemize}
+    \item \textbf{Latência de recomendação} (30 obras, CPU): p50 = 0.47 ms, p95 = 0.72 ms, máximo = 1.46 ms (50 execuções).
+    \item \textbf{Tempo de \textit{bootstrap}} da Fase 1 (modelo cacheado): aproximadamente 1 segundo.
+    \item \textbf{Tamanho do modelo} MiniLM no \textit{cache} HuggingFace: $\sim$420 MB.
+    \item \textbf{Testes adversariais do chat}: 7 de 7 cenários recusados com frase canônica e confiança zerada.
+\end{itemize}
+
+\section{Pontos de Atenção e Melhorias Futuras}
+
+\begin{itemize}
+    \item Envolver \texttt{emprestimo.save()} em \texttt{transaction.atomic()} para evitar inconsistência entre decremento de estoque e persistência.
+    \item Mover \texttt{SECRET\_KEY} e \texttt{DEBUG} para variáveis de ambiente.
+    \item Restringir \texttt{ALLOWED\_HOSTS} por ambiente.
+    \item Cachear em memória a matriz de \textit{embeddings} com invalidação via \textit{signal}, evitando consulta a cada pergunta.
+    \item Persistir \textit{log} das perguntas enviadas ao chat para auditoria (previsto para Sprint 3).
+    \item Implementar \textit{rate limiting} nas rotas do chat (previsto para Sprint 3).
+    \item Automatizar em \textit{suite} a bateria de testes adversariais (hoje executada manualmente).
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+\chapter{Resultados Esperados}
+
+Ao final da disciplina, o grupo pretende entregar um conjunto de artefatos que demonstrem, de forma integrada, os conteúdos abordados em INF0330.
+
+\noindent\textbf{Artefatos.}
+
+\begin{itemize}
+    \item Aplicação web funcional para gestão de biblioteca, com autenticação, CRUD completo, regras de negócio implementadas e testadas.
+    \item Módulo de recomendação por similaridade semântica integrado ao sistema, consumindo um modelo treinado e executando localmente.
+    \item Assistente conversacional via RAG, consumindo modelo generativo em nuvem, com pipeline completo de sanitização, montagem de \textit{prompt}, chamada à \textit{API} e pós-processamento.
+    \item Pipeline de segurança com cinco camadas de \textit{defense-in-depth}, validado por sete testes adversariais.
+    \item \textit{Dashboard} de indicadores operacionais da biblioteca, útil para bibliotecários e coordenações acadêmicas.
+    \item Código versionado no GitHub, com histórico limpo, \textit{README} executável, instruções de execução e \textit{seed} de dados.
+    \item Documentação técnica do sistema e relatório final com avaliação crítica da solução e dos aprendizados.
+    \item Apresentação demonstrando o funcionamento \textit{end-to-end} da aplicação.
+\end{itemize}
+
+\noindent\textbf{Aprendizados esperados.} A execução deste trabalho consolidará, para o grupo, competências em desenvolvimento web com Django, integração prática de modelos de IA treinados (tanto \textit{encoder} quanto generativo) a sistemas reais, arquitetura RAG, \textit{prompt engineering} defensivo e boas práticas de engenharia de software (versionamento, revisão, testes, documentação).
+
+\noindent\textbf{Contribuições.} Embora o escopo da entrega seja acadêmico, o artefato resultante poderá servir de ponto de partida para iniciativas reais de modernização de bibliotecas acadêmicas e comunitárias, em particular em unidades que ainda operam sem sistema digital adequado. O projeto permanecerá publicamente disponível em repositório aberto, facilitando sua reutilização e extensão por outros grupos e instituições.
+
+% -----------------------------------------------------------------------------
+\chapter{Referências}
+
+\begin{thebibliography}{99}
+
+\bibitem{django}
+DJANGO SOFTWARE FOUNDATION. \textit{Django documentation}. 2026. Disponível em: \url{https://docs.djangoproject.com}.
+
+\bibitem{sbert}
+REIMERS, N.; GUREVYCH, I. \textit{Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks}. In: Conference on Empirical Methods in Natural Language Processing (EMNLP), 2019.
+
+\bibitem{recsys}
+RICCI, F.; ROKACH, L.; SHAPIRA, B. \textit{Recommender Systems Handbook}. 2. ed. New York: Springer, 2015.
+
+\bibitem{rag}
+LEWIS, P.; PEREZ, E.; PIKTUS, A. et al. \textit{Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks}. In: NeurIPS, 2020.
+
+\bibitem{lgpd}
+BRASIL. \textit{Lei no 13.709, de 14 de agosto de 2018}. Lei Geral de Proteção de Dados Pessoais (LGPD). Brasília: Diário Oficial da União, 2018.
+
+\bibitem{abnt6023}
+ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. \textit{NBR 6023: Informação e documentação --- Referências --- Elaboração}. Rio de Janeiro: ABNT, 2018.
+
+\bibitem{sommerville}
+SOMMERVILLE, I. \textit{Engenharia de software}. 10. ed. São Paulo: Pearson, 2018.
+
+\bibitem{pressman}
+PRESSMAN, R. S.; MAXIM, B. R. \textit{Engenharia de software: uma abordagem profissional}. 8. ed. Porto Alegre: McGraw-Hill, 2016.
+
+\bibitem{mikolov}
+MIKOLOV, T.; CHEN, K.; CORRADO, G.; DEAN, J. \textit{Efficient Estimation of Word Representations in Vector Space}. arXiv:1301.3781, 2013.
+
+\bibitem{owasp-llm}
+OWASP. \textit{Top 10 for Large Language Model Applications}. 2024. Disponível em: \url{https://owasp.org/www-project-top-10-for-large-language-model-applications/}.
+
+\end{thebibliography}
+
+\end{document}
+
+%------------------------------------------------------------------------- %
+%             F I M   D O   A R Q U I V O :  proposta-ufg.tex              %
+%------------------------------------------------------------------------- %
