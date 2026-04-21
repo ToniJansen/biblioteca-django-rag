@@ -201,7 +201,7 @@ sequenceDiagram
         E-->>R: vetor 384d
         R->>DB: SELECT todos LivroEmbedding
         DB-->>R: matriz + ids
-        R->>R: ranqueia acervo (ate 200 tudo; acima 200 top-30)
+        R->>R: ranqueia acervo (ate 200 tudo / acima 200 top-30)
     end
 
     rect rgb(240, 255, 240)
