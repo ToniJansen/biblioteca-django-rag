@@ -12,15 +12,15 @@
 erDiagram
     pessoa ||--o{ emprestimo : "leitor"
     livro  ||--o{ emprestimo : "livro"
-    livro  ||--o| LivroEmbedding : "OneToOne"
+    livro  ||--o| LivroEmbedding : "1-1"
 
     pessoa {
         int    id PK
         string nome
         string email
         string celular
-        string funcao "Leitor | Bibliotecario"
-        date   nascimento "opcional"
+        string funcao
+        date   nascimento
         bool   ativo
     }
 
@@ -28,9 +28,9 @@ erDiagram
         int    id PK
         string titulo
         string autor
-        string tipo_obra "BIBLIOGRAFIA | TESE_DISSERTACAO | MONOGRAFIA"
-        string isbn "opcional"
-        int    ano "opcional"
+        string tipo_obra
+        string isbn
+        int    ano
         int    exemplares_total
         int    exemplares_disponiveis
     }
@@ -39,20 +39,33 @@ erDiagram
         int  id PK
         int  livro_id FK
         int  leitor_id FK
-        date data_saida "auto_now_add"
-        date data_devolucao_prevista "auto-calculada: saida + 14 dias"
-        date data_devolucao_real "null até devolver"
+        date data_saida
+        date data_devolucao_prevista
+        date data_devolucao_real
     }
 
     LivroEmbedding {
-        int      livro_id PK_FK
-        binary   vetor "float32 x 384"
-        text     texto_fonte "título + autor + tipo legível"
+        int      livro_id PK
+        binary   vetor
+        text     texto_fonte
         string   modelo_versao
         int      dimensao
         datetime atualizado_em
     }
 ```
+
+**Notas sobre os campos (não vão no diagrama para evitar bugs do parser Mermaid):**
+
+- `pessoa.funcao` — valores aceitos: `Leitor` ou `Bibliotecario`
+- `pessoa.nascimento` — opcional
+- `livro.tipo_obra` — valores: `BIBLIOGRAFIA`, `TESE_DISSERTACAO`, `MONOGRAFIA`
+- `livro.isbn`, `livro.ano` — opcionais
+- `emprestimo.data_saida` — preenchida via `auto_now_add`
+- `emprestimo.data_devolucao_prevista` — `data_saida + 14 dias` (automático)
+- `emprestimo.data_devolucao_real` — `null` enquanto não devolvido
+- `LivroEmbedding.livro_id` — PK e também FK implícito (`OneToOne` com `livro`)
+- `LivroEmbedding.vetor` — `float32`, 384 dimensões (`BinaryField`)
+- `LivroEmbedding.texto_fonte` — concatenação de título, autor e tipo legível
 
 ---
 
