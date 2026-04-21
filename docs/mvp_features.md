@@ -201,12 +201,12 @@ sequenceDiagram
         E-->>R: vetor 384d
         R->>DB: SELECT todos LivroEmbedding
         DB-->>R: matriz + ids
-        R->>R: ranqueia acervo (≤200: tudo; >200: top-30)
+        R->>R: ranqueia acervo (ate 200 tudo; acima 200 top-30)
     end
 
     rect rgb(240, 255, 240)
         note over R,G: Inferência com guardrails
-        R->>R: _montar_mensagens<br/>(SYSTEM_PROMPT + <<<PERGUNTA>>>)
+        R->>R: _montar_mensagens<br/>(SYSTEM_PROMPT + PERGUNTA delimitada)
         R->>G: chat.completions.create<br/>temp=0.2
         G-->>R: resposta com (Obra #N)
     end
