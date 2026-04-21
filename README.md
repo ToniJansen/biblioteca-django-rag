@@ -2,6 +2,8 @@
 
 Sistema web para gestão de biblioteca universitária com **duas camadas de IA integradas**: recomendação semântica de obras (HuggingFace, offline) e assistente conversacional sobre o acervo (Groq + Llama 3.3, cloud). Projeto de trabalho da disciplina **INF0330 — Framework de Desenvolvimento Web para Consumo de Modelos Treinados de Inteligência Artificial** (UFG, Prof. Ronaldo M. da Costa).
 
+![Dashboard do sistema — visão do bibliotecário com contadores do acervo, distribuição por tipo de obra e acesso ao chat com IA](docs/img/dashboard.png)
+
 ---
 
 ## Status do MVP
