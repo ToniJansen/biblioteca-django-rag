@@ -47,6 +47,9 @@ proposta/*.synctex.gz
 proposta/*.fls
 proposta/*.fdb_latexmk
 
+# Build intermediário do DOCX (gerado por _build_docx.py)
+proposta/_docx_build.tex
+
 # Recursos locais (não versionar)
 reunioes_requisitos/
 /templates/
