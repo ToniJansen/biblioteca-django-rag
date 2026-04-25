@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'recomendador',
+    'metricas',
     'bootstrap5',
     'django_tables2',
 ]

@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% block title %}Métricas{% endblock %}
+{% block content %}
+<div class="d-flex align-items-baseline justify-content-between mb-3">
+    <div>
+        <h2 class="mb-0">Painel de Métricas</h2>
+        <small class="text-muted">
+            Camada analítica — read models que alimentam o dashboard.
+        </small>
+    </div>
+    <span class="badge text-bg-success">{{ total_views }} views</span>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <strong>Views analíticas × Papéis</strong>
+        <small class="text-muted">
+            5 SQL views (read models) + 1 view Django que renderiza o painel.
+        </small>
+    </div>
+    <div class="card-body">
+        {{ tabela_views_html|safe }}
+    </div>
+    <div class="card-footer text-muted small">
+        Modelo OBT (One Big Table) com grão de 1 linha por empréstimo,
+        seguindo modelagem dimensional (Kimball &amp; Ross, 2013). As views
+        derivam agregações específicas e mantêm o CRUD normalizado intacto.
+    </div>
+</div>
+{% endblock %}

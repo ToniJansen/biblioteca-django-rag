@@ -12,3 +12,6 @@ pandas>=2.0
 # Chat conversacional — Fase 2 (Groq API)
 groq>=0.11
 python-dotenv>=1.0
+
+# Camada analítica — painel /metricas/ (Plotly)
+plotly>=5.20
