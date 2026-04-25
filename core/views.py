@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -187,6 +188,24 @@ class livro_menu(LoginRequiredMixin, SingleTableView):
     table_class = livro_table
     template_name = 'core/livro_menu.html'
     table_pagination = {'per_page': 10}
+
+    def get_queryset(self):
+        # Busca por titulo OU autor usando Q objects (Aula 3).
+        # Demonstra:
+        #   - Q(...) | Q(...)  → operador OR no ORM
+        #   - __icontains      → lookup case-insensitive
+        qs = super().get_queryset()
+        q = (self.request.GET.get('q') or '').strip()
+        if q:
+            qs = qs.filter(
+                Q(titulo__icontains=q) | Q(autor__icontains=q)
+            )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q', '')
+        return ctx
 
 
 class livro_create(LoginRequiredMixin, CreateView):

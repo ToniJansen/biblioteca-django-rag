@@ -9,5 +9,17 @@
         <a href="{% url 'livro_create_alias' %}" class="btn btn-success">+ Novo Livro</a>
     </div>
 </div>
+
+<form method="get" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="q" value="{{ q }}" class="form-control"
+               placeholder="Buscar por título ou autor...">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        {% if q %}
+            <a href="{% url 'livro_menu_alias' %}" class="btn btn-outline-secondary">Limpar</a>
+        {% endif %}
+    </div>
+</form>
+
 {% render_table table %}
 {% endblock %}
