@@ -8,6 +8,10 @@ urlpatterns = [
     path('atrasados/', views.atrasados, name='atrasados_alias'),
     path('chat/', views.chat, name='chat_alias'),
 
+    # Integracao via Pandas (CSV in/out)
+    path('exportar_livros_csv/', views.exportar_livros_csv, name='exportar_livros_csv_alias'),
+    path('importar_livros_csv/', views.importar_livros_csv, name='importar_livros_csv_alias'),
+
     path('pessoa/', views.pessoa_menu.as_view(), name='pessoa_menu_alias'),
     path('pessoa/list/', views.pessoa_list.as_view(), name='pessoa_list_alias'),
     path('pessoa/create/', views.pessoa_create.as_view(), name='pessoa_create_alias'),

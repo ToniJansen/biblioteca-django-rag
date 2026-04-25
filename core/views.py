@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, ListView
@@ -48,6 +49,61 @@ def menu(request):
 def atrasados(request):
     todos = emprestimo.objects.filter(data_devolucao_real__isnull=True, data_devolucao_prevista__lt=date.today())
     return render(request, 'core/atrasados.html', {'emprestimos': todos})
+
+
+@login_required
+def exportar_livros_csv(request):
+    """Exporta o acervo de livros para CSV (download direto pelo navegador).
+
+    Demonstra integracao Django ORM + Pandas:
+      banco SQL  ->  pessoa.objects.values()  ->  pd.DataFrame  ->  CSV  ->  download
+    """
+    import pandas as pd
+
+    # 1) Pega dados do banco via ORM (queryset.values devolve dicionarios)
+    qs = livro.objects.values('id', 'titulo', 'autor', 'tipo_obra',
+                              'ano', 'isbn', 'exemplares_total',
+                              'exemplares_disponiveis')
+
+    # 2) Converte em DataFrame Pandas
+    df = pd.DataFrame(list(qs))
+
+    # 3) Configura HttpResponse para forcar download de CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=livros.csv'
+
+    # 4) Escreve o CSV direto no corpo da resposta HTTP
+    df.to_csv(path_or_buf=response, index=False)
+    return response
+
+
+@login_required
+def importar_livros_csv(request):
+    """Le um CSV do disco e imprime no terminal (versao didatica, sem gravar).
+
+    Demonstra o caminho inverso: CSV -> DataFrame -> iterrows -> Python.
+    A gravacao real (.objects.create) fica para uma proxima iteracao.
+    """
+    import pandas as pd
+    from pathlib import Path
+
+    arquivo = Path.home() / 'Downloads' / 'livros.csv'
+    if not arquivo.exists():
+        return HttpResponse(
+            f"Arquivo nao encontrado em {arquivo}. "
+            f"Exporte primeiro em /exportar_livros_csv/ e mova o arquivo para ~/Downloads/"
+        )
+
+    df = pd.read_csv(arquivo)
+
+    for indice, linha in df.iterrows():
+        print(indice, "Titulo:", linha.get('titulo'))
+        print(indice, "Autor:", linha.get('autor'))
+        print(indice, "Ano:", linha.get('ano'))
+        print(indice, "Exemplares:", linha.get('exemplares_total'))
+        print("---")
+
+    return HttpResponse(f"Lidas {len(df)} linhas do CSV (saida no terminal do servidor).")
 
 
 @login_required
