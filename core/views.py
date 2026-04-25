@@ -194,6 +194,16 @@ class livro_create(LoginRequiredMixin, CreateView):
     fields = ['titulo', 'autor', 'tipo_obra', 'ano', 'isbn', 'exemplares_total', 'exemplares_disponiveis']
     success_url = reverse_lazy('livro_menu_alias')
 
+    def dispatch(self, request, *args, **kwargs):
+        # Aula 3: verificação granular de permissão (alem do LoginRequiredMixin).
+        # Permissão padrão Django: <app>.<acao>_<modelo>
+        if not request.user.has_perm('core.add_livro'):
+            return HttpResponse(
+                "Sem permissão para adicionar livros. "
+                "Solicite ao administrador a permissão 'core | livro | Can add livro'."
+            )
+        return super().dispatch(request, *args, **kwargs)
+
 
 class livro_update(LoginRequiredMixin, UpdateView):
     model = livro
