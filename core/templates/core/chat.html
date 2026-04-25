@@ -1,0 +1,80 @@
+{% extends 'core/base.html' %}
+{% load badges %}
+{% block title %}Pergunte ao Acervo{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'menu_alias' %}">Menu</a></li>
+        <li class="breadcrumb-item active">Pergunte ao Acervo</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>Pergunte ao Acervo</strong>
+                <small class="text-muted">RAG: MiniLM (HuggingFace) + Llama 3.3 70B (Groq)</small>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Faca uma pergunta em linguagem natural sobre as obras do acervo —
+                    por exemplo: <em>"Tem algum livro sobre redes neurais em portugues?"</em>,
+                    <em>"Quais monografias sobre Django estao disponiveis?"</em>,
+                    <em>"Preciso de uma referencia para metodologia cientifica"</em>.
+                </p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="pergunta" rows="3" class="form-control" required
+                                  placeholder="Digite sua pergunta...">{{ pergunta }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Perguntar</button>
+                </form>
+            </div>
+        </div>
+
+        {% if erro %}
+        <div class="alert alert-danger">
+            <strong>Erro ao consultar o LLM:</strong>
+            <pre class="mb-0 mt-2 small">{{ erro }}</pre>
+        </div>
+        {% endif %}
+
+        {% if resposta %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-success bg-opacity-10">
+                <strong>Resposta</strong>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-wrap;">{{ resposta }}</p>
+            </div>
+        </div>
+
+        {% if obras_citadas %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <strong>Obras citadas / consideradas</strong>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for o in obras_citadas %}
+                <li class="list-group-item">
+                    <a href="{% url 'livro_detail_alias' o.pk %}" class="text-decoration-none">
+                        <div class="fw-bold">{{ o.titulo }}</div>
+                        <small class="text-muted">{{ o.autor }}{% if o.ano %} ({{ o.ano }}){% endif %}</small>
+                    </a>
+                    <div class="mt-1">
+                        {% badge_tipo_obra o.tipo_obra curto=True %}
+                        {% badge_exemplares o.exemplares_disponiveis %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

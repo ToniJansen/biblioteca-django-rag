@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% load badges %}
+{% block title %}{{ obra.titulo }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'menu_alias' %}">Menu</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'livro_menu_alias' %}">Obras</a></li>
+        <li class="breadcrumb-item active">{{ obra.titulo|truncatechars:40 }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title">{{ obra.titulo }}</h2>
+                <h5 class="card-subtitle text-muted mb-3">{{ obra.autor }}</h5>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Tipo de obra</dt>
+                    <dd class="col-sm-8">{% badge_tipo_obra obra.tipo_obra %}</dd>
+
+                    <dt class="col-sm-4">ISBN</dt>
+                    <dd class="col-sm-8">{{ obra.isbn|default:"—" }}</dd>
+
+                    <dt class="col-sm-4">Ano</dt>
+                    <dd class="col-sm-8">{{ obra.ano|default:"—" }}</dd>
+
+                    <dt class="col-sm-4">Exemplares totais</dt>
+                    <dd class="col-sm-8">{{ obra.exemplares_total }}</dd>
+
+                    <dt class="col-sm-4">Exemplares disponiveis</dt>
+                    <dd class="col-sm-8">
+                        {% if obra.exemplares_disponiveis > 0 %}
+                            <span class="text-success fw-bold">{{ obra.exemplares_disponiveis }}</span>
+                        {% else %}
+                            <span class="text-danger fw-bold">0</span>
+                            <small class="text-muted">(todos emprestados)</small>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+            <div class="card-footer bg-white d-flex gap-2">
+                <a href="{% url 'livro_update_alias' obra.pk %}" class="btn btn-outline-secondary btn-sm">Editar</a>
+                <a href="{% url 'emprestimo_create_alias' %}?livro={{ obra.pk }}" class="btn btn-success btn-sm {% if obra.exemplares_disponiveis == 0 %}disabled{% endif %}">Emprestar</a>
+                <a href="{% url 'livro_menu_alias' %}" class="btn btn-outline-secondary btn-sm ms-auto">Voltar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <strong>Obras similares</strong>
+                <small class="text-muted d-block">Baseado em similaridade semantica (IA)</small>
+            </div>
+            <div class="card-body p-0">
+                {% if not tem_embedding %}
+                    <div class="p-3 text-muted small">
+                        Esta obra ainda nao foi processada pelo modulo de recomendacao.
+                        <br>Rode <code>python manage.py gerar_embeddings</code> para atualizar.
+                    </div>
+                {% elif not similares %}
+                    <div class="p-3 text-muted small">
+                        Nenhuma obra similar encontrada no acervo atual.
+                    </div>
+                {% else %}
+                    <ul class="list-group list-group-flush">
+                        {% for s in similares %}
+                        <li class="list-group-item">
+                            <a href="{% url 'livro_detail_alias' s.pk %}" class="text-decoration-none">
+                                <div class="fw-bold">{{ s.titulo|truncatechars:50 }}</div>
+                                <small class="text-muted">{{ s.autor }}</small>
+                            </a>
+                            <div class="mt-1">
+                                {% badge_tipo_obra s.tipo_obra curto=True %}
+                                {% badge_exemplares s.exemplares_disponiveis %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

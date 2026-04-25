@@ -49,4 +49,4 @@ proposta/*.fdb_latexmk
 
 # Recursos locais (não versionar)
 reunioes_requisitos/
-templates/
+/templates/

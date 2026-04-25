@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}
+{% load render_table from django_tables2 %}
+{% block title %}Pessoas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Pessoas</h2>
+    <a href="{% url 'pessoa_create_alias' %}" class="btn btn-success">+ Nova Pessoa</a>
+</div>
+{% render_table table %}
+{% endblock %}

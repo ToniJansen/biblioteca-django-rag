@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}
+{% load render_table from django_tables2 %}
+{% block title %}Emprestimos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Emprestimos</h2>
+    <a href="{% url 'emprestimo_create_alias' %}" class="btn btn-success">+ Novo Emprestimo</a>
+</div>
+{% render_table table %}
+{% endblock %}

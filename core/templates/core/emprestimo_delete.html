@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+{% block title %}Excluir Emprestimo{% endblock %}
+{% block content %}
+<h2>Excluir Emprestimo</h2>
+<div class="alert alert-warning">
+    Confirma a exclusao do emprestimo de <strong>{{ object.livro.titulo }}</strong> para <strong>{{ object.leitor.nome }}</strong>?
+    <br><small class="text-danger">Atencao: excluir emprestimo nao devolve o exemplar ao estoque automaticamente.</small>
+</div>
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sim, excluir</button>
+    <a href="{% url 'emprestimo_menu_alias' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

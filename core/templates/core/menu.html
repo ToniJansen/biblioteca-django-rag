@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+{% block title %}Menu{% endblock %}
+{% block content %}
+<h2>Bem-vindo, {{ usuario }}</h2>
+<div class="row mt-4">
+    <div class="col-md-3"><div class="card text-bg-success"><div class="card-body text-center"><h4>{{ total_livros }}</h4><small>Obras no acervo</small></div></div></div>
+    <div class="col-md-3"><div class="card text-bg-info"><div class="card-body text-center"><h4>{{ total_leitores }}</h4><small>Leitores ativos</small></div></div></div>
+    <div class="col-md-3"><div class="card text-bg-primary"><div class="card-body text-center"><h4>{{ emprestimos_ativos }}</h4><small>Emprestimos ativos</small></div></div></div>
+    <div class="col-md-3"><div class="card text-bg-danger"><div class="card-body text-center"><h4>{{ emprestimos_atrasados }}</h4><small>Atrasados</small></div></div></div>
+</div>
+<h5 class="mt-4 text-muted">Acervo por tipo de obra</h5>
+<div class="row mt-2">
+    <div class="col-md-4"><div class="card border-primary"><div class="card-body text-center"><h4 class="text-primary">{{ bibliografias }}</h4><small>Bibliografia</small></div></div></div>
+    <div class="col-md-4"><div class="card border-warning"><div class="card-body text-center"><h4 class="text-warning">{{ teses }}</h4><small>Teses e Dissertacoes</small></div></div></div>
+    <div class="col-md-4"><div class="card border-info"><div class="card-body text-center"><h4 class="text-info">{{ monografias }}</h4><small>Monografias</small></div></div></div>
+</div>
+<div class="row mt-4 g-2">
+    <div class="col-md-3"><a href="{% url 'livro_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Livros</a></div>
+    <div class="col-md-3"><a href="{% url 'emprestimo_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Emprestimos</a></div>
+    <div class="col-md-3"><a href="{% url 'atrasados_alias' %}" class="btn btn-outline-danger w-100 py-3">Ver Atrasados</a></div>
+    <div class="col-md-3"><a href="{% url 'pessoa_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Pessoas</a></div>
+</div>
+<div class="row mt-3">
+    <div class="col-12">
+        <a href="{% url 'chat_alias' %}" class="btn btn-dark w-100 py-3">
+            <strong>Pergunte ao Acervo</strong>
+            <small class="d-block text-light opacity-75">Chat com IA — busca semantica + LLM</small>
+        </a>
+    </div>
+</div>
+{% endblock %}
