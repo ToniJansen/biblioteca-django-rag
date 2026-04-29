@@ -1,0 +1,480 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">📊 Painel Analítico</h2>
+    <a href="{% url 'menu_alias' %}" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+</div>
+
+<!-- ============================== ABAS ============================== -->
+<ul class="nav nav-tabs mb-4" id="metricasTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="acervo-tab" data-bs-toggle="tab" data-bs-target="#acervo" type="button" role="tab">Acervo</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="circulacao-tab" data-bs-toggle="tab" data-bs-target="#circulacao" type="button" role="tab">Circulação</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="leitores-tab" data-bs-toggle="tab" data-bs-target="#leitores" type="button" role="tab">Leitores</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="ia-tab" data-bs-toggle="tab" data-bs-target="#ia" type="button" role="tab">IA e Qualidade</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="metricasContent">
+
+    <!-- ========================= ABA ACERVO ========================= -->
+    <div class="tab-pane fade show active" id="acervo" role="tabpanel">
+        <!-- KPIs -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-success border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-success">{{ acervo_totais.total_obras|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Total de Obras</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-primary border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-primary">{{ acervo_totais.exemplares_disponiveis|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Exemplares Disponíveis</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-danger border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-danger">{{ acervo_totais.obras_esgotadas|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Obras Esgotadas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Acervo por Tipo de Obra</div>
+                    <div class="card-body"><canvas id="chartAcervoTipo"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Disponibilidade por Tipo</div>
+                    <div class="card-body"><canvas id="chartDisponibilidade"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <!-- Table -->
+        <div class="card mb-4">
+            <div class="card-header">Top 10 Obras Mais Emprestadas</div>
+            <div class="card-body p-0">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Título</th><th>Autor</th><th>Tipo</th><th class="text-center">Empréstimos</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for o in top_obras %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ o.titulo }}</td>
+                            <td>{{ o.autor }}</td>
+                            <td><span class="badge bg-secondary">{{ o.tipo_obra }}</span></td>
+                            <td class="text-center fw-bold">{{ o.total }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">Nenhum empréstimo registrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= ABA CIRCULACAO ======================= -->
+    <div class="tab-pane fade" id="circulacao" role="tabpanel">
+        <!-- KPIs -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-start border-primary border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-primary">{{ circ_kpis.ativos|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Ativos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-start border-success border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-success">{{ circ_kpis.devolvidos|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Devolvidos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-start border-danger border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-danger">{{ circ_kpis.atrasados|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Atrasados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-start border-info border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-info">{{ taxa_devolucao }}%</h1>
+                        <p class="text-muted mb-0">Taxa de Devolução</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Empréstimos por Mês</div>
+                    <div class="card-body"><canvas id="chartCircMensal"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Distribuição por Status</div>
+                    <div class="card-body"><canvas id="chartCircStatus"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Empréstimos por Tipo de Obra</div>
+                    <div class="card-body"><canvas id="chartCircTipo"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Empréstimos Atrasados</div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>Leitor</th><th>Obra</th><th>Prevista</th><th class="text-center">Dias</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for a in atrasados_lista %}
+                                <tr>
+                                    <td>{{ a.leitor_nome }}</td>
+                                    <td>{{ a.titulo }}</td>
+                                    <td>{{ a.data_devolucao_prevista }}</td>
+                                    <td class="text-center"><span class="badge bg-danger">{{ a.dias_atraso }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">Nenhum atraso ✓</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== ABA LEITORES ======================== -->
+    <div class="tab-pane fade" id="leitores" role="tabpanel">
+        <!-- KPIs -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-success border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-success">{{ leitores_kpis.ativos|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Leitores Ativos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-secondary border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-secondary">{{ leitores_kpis.inativos|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Leitores Inativos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-primary border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-primary">{{ leitores_kpis.media_emp|default:"0" }}</h1>
+                        <p class="text-muted mb-0">Média Empr./Leitor</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Charts + Table -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Top Leitores por Volume</div>
+                    <div class="card-body"><canvas id="chartTopLeitores"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Engajamento e Risco de Atraso</div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>Leitor</th><th class="text-center">Total</th><th class="text-center">Ativos</th><th class="text-center">Atrasados</th><th class="text-center">% Atraso</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for l in leitores_resumo %}
+                                <tr>
+                                    <td>{{ l.leitor_nome }}</td>
+                                    <td class="text-center">{{ l.total_emprestimos }}</td>
+                                    <td class="text-center">{{ l.emprestimos_ativos }}</td>
+                                    <td class="text-center">{{ l.emprestimos_atrasados }}</td>
+                                    <td class="text-center">
+                                        {% if l.pct_atraso > 50 %}
+                                        <span class="badge bg-danger">{{ l.pct_atraso }}%</span>
+                                        {% elif l.pct_atraso > 20 %}
+                                        <span class="badge bg-warning text-dark">{{ l.pct_atraso }}%</span>
+                                        {% else %}
+                                        <span class="badge bg-success">{{ l.pct_atraso|default:"0" }}%</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-3">Nenhum leitor com empréstimo.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ABA IA E QUALIDADE ===================== -->
+    <div class="tab-pane fade" id="ia" role="tabpanel">
+        <!-- KPIs -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-success border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-success">{{ ia_cobertura.com_embedding|default:"0" }}</h1>
+                        <p class="text-muted mb-0">✅ Com Embedding</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-warning border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-warning">{{ ia_cobertura.sem_embedding|default:"0" }}</h1>
+                        <p class="text-muted mb-0">⚠️ Sem Embedding</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-start border-info border-4 h-100">
+                    <div class="card-body text-center">
+                        <h1 class="display-5 text-info">{{ ia_pct }}%</h1>
+                        <p class="text-muted mb-0">Cobertura de IA</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header">Cobertura de Embeddings</div>
+                    <div class="card-body"><canvas id="chartIACobertura"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Obras sem Embedding</div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr><th>Título</th><th>Autor</th><th>Tipo</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for o in obras_sem_emb %}
+                                <tr>
+                                    <td>{{ o.titulo }}</td>
+                                    <td>{{ o.autor }}</td>
+                                    <td><span class="badge bg-secondary">{{ o.tipo_obra }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-success py-3">✅ Todas as obras possuem embedding</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Model info -->
+        <div class="card bg-light border-info mb-4">
+            <div class="card-body">
+                <h6 class="card-title">🧠 Modelo de IA</h6>
+                <p class="mb-1"><code>paraphrase-multilingual-MiniLM-L12-v2</code> — 384 dimensões</p>
+                <p class="mb-0 text-muted"><small>Fonte: HuggingFace · sentence-transformers · execução local em CPU</small></p>
+            </div>
+        </div>
+    </div>
+
+</div><!-- tab-content -->
+
+<!-- ============================ CHART.JS ============================ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const COLORS = {
+        blue:    'rgba(54,  162, 235, 0.8)',
+        green:   'rgba(75,  192, 192, 0.8)',
+        red:     'rgba(255, 99,  132, 0.8)',
+        orange:  'rgba(255, 159,  64, 0.8)',
+        purple:  'rgba(153, 102, 255, 0.8)',
+        yellow:  'rgba(255, 205,  86, 0.8)',
+        grey:    'rgba(201, 203, 207, 0.8)',
+    };
+
+    // ---- DATA from Django context ----
+    const acervoPorTipo   = JSON.parse('{{ acervo_por_tipo_json|escapejs }}');
+    const circMensal      = JSON.parse('{{ circ_mensal_json|escapejs }}');
+    const circTipoStatus  = JSON.parse('{{ circ_tipo_status_json|escapejs }}');
+
+    // ====================== ABA ACERVO ======================
+    if (acervoPorTipo.length) {
+        const TIPO_LABELS = {
+            'BIBLIOGRAFIA': 'Bibliografia',
+            'TESE_DISSERTACAO': 'Tese/Dissert.',
+            'MONOGRAFIA': 'Monografia'
+        };
+        const labels = acervoPorTipo.map(r => TIPO_LABELS[r.tipo_obra] || r.tipo_obra);
+
+        new Chart(document.getElementById('chartAcervoTipo'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Obras',
+                    data: acervoPorTipo.map(r => r.total_obras),
+                    backgroundColor: [COLORS.blue, COLORS.orange, COLORS.purple],
+                }]
+            },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+        });
+
+        new Chart(document.getElementById('chartDisponibilidade'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Disponíveis', data: acervoPorTipo.map(r => r.exemplares_disponiveis), backgroundColor: COLORS.green },
+                    { label: 'Emprestados', data: acervoPorTipo.map(r => r.exemplares_emprestados),  backgroundColor: COLORS.red },
+                ]
+            },
+            options: { scales: { x: { stacked: true }, y: { stacked: true } } }
+        });
+    }
+
+    // ===================== ABA CIRCULACAO =====================
+    // Emprestimos por mes
+    if (circMensal.length) {
+        new Chart(document.getElementById('chartCircMensal'), {
+            type: 'line',
+            data: {
+                labels: circMensal.map(r => r.ano_mes_saida),
+                datasets: [{
+                    label: 'Empréstimos',
+                    data: circMensal.map(r => r.total),
+                    borderColor: COLORS.blue,
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    fill: true, tension: 0.3
+                }]
+            }
+        });
+    }
+
+    // Distribuicao por status (donut)
+    const ativos   = {{ circ_kpis.ativos|default:"0" }};
+    const devolvidos = {{ circ_kpis.devolvidos|default:"0" }};
+    const atrasados  = {{ circ_kpis.atrasados|default:"0" }};
+    if (ativos + devolvidos + atrasados > 0) {
+        new Chart(document.getElementById('chartCircStatus'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Emprestado', 'Devolvido', 'Atrasado'],
+                datasets: [{
+                    data: [ativos, devolvidos, atrasados],
+                    backgroundColor: [COLORS.blue, COLORS.green, COLORS.red],
+                }]
+            }
+        });
+    }
+
+    // Emprestimos por tipo de obra (grouped bar)
+    if (circTipoStatus.length) {
+        const TIPO_LABELS = {
+            'BIBLIOGRAFIA': 'Bibliografia',
+            'TESE_DISSERTACAO': 'Tese/Dissert.',
+            'MONOGRAFIA': 'Monografia'
+        };
+        const tipos   = [...new Set(circTipoStatus.map(r => r.tipo_obra))];
+        const statuses = [...new Set(circTipoStatus.map(r => r.status))];
+        const statusColors = { EMPRESTADO: COLORS.blue, DEVOLVIDO: COLORS.green, ATRASADO: COLORS.red };
+        const datasets = statuses.map(s => ({
+            label: s.charAt(0) + s.slice(1).toLowerCase(),
+            data: tipos.map(t => {
+                const row = circTipoStatus.find(r => r.tipo_obra === t && r.status === s);
+                return row ? row.total : 0;
+            }),
+            backgroundColor: statusColors[s] || COLORS.grey,
+        }));
+        new Chart(document.getElementById('chartCircTipo'), {
+            type: 'bar',
+            data: { labels: tipos.map(t => TIPO_LABELS[t] || t), datasets },
+        });
+    }
+
+    // ====================== ABA LEITORES =====================
+    const leitoresResumo = [
+        {% for l in leitores_resumo %}
+        { nome: "{{ l.leitor_nome|escapejs }}", total: {{ l.total_emprestimos }} },
+        {% endfor %}
+    ];
+    if (leitoresResumo.length) {
+        new Chart(document.getElementById('chartTopLeitores'), {
+            type: 'bar',
+            data: {
+                labels: leitoresResumo.map(r => r.nome),
+                datasets: [{
+                    label: 'Empréstimos',
+                    data: leitoresResumo.map(r => r.total),
+                    backgroundColor: COLORS.blue,
+                }]
+            },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+        });
+    }
+
+    // =================== ABA IA E QUALIDADE ==================
+    const iaCom  = {{ ia_cobertura.com_embedding|default:"0" }};
+    const iaSem  = {{ ia_cobertura.sem_embedding|default:"0" }};
+    if (iaCom + iaSem > 0) {
+        new Chart(document.getElementById('chartIACobertura'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Com Embedding', 'Sem Embedding'],
+                datasets: [{
+                    data: [iaCom, iaSem],
+                    backgroundColor: [COLORS.green, COLORS.orange],
+                }]
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

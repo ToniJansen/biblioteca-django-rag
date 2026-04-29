@@ -47,13 +47,22 @@ Sistema web para gestão de biblioteca universitária com **duas camadas de IA i
 ## Setup rápido
 
 ```bash
-cd biblioteca_mvp
-python -m venv .venv && source .venv/bin/activate
+# O comando abaixo deve ser rodado na raiz do repositório (onde estão manage.py e requirements.txt)
+python -m venv .venv
+
+# Ativar no Linux/Mac:
+# source .venv/bin/activate
+# Ativar no Windows (PowerShell):
+# .\.venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 
 # Banco + dados de teste
 python manage.py migrate
-python manage.py shell < seed.py
+# Linux/Mac:
+# python manage.py shell < seed.py
+# Windows (PowerShell):
+Get-Content seed.py | python manage.py shell
 
 # Embeddings do acervo (Fase 1 — HuggingFace, roda 100% local)
 python manage.py gerar_embeddings

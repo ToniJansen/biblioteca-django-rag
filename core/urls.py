@@ -7,6 +7,7 @@ urlpatterns = [
     path('menu/', views.menu, name='menu_alias'),
     path('atrasados/', views.atrasados, name='atrasados_alias'),
     path('chat/', views.chat, name='chat_alias'),
+    path('dashboard/', views.metricas, name='metricas_alias'),
 
     # Integracao via Pandas (CSV in/out)
     path('exportar_livros_csv/', views.exportar_livros_csv, name='exportar_livros_csv_alias'),

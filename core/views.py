@@ -1,3 +1,4 @@
+import json
 from datetime import date
 
 from django.contrib.auth import authenticate, login, logout
@@ -263,3 +264,59 @@ class emprestimo_delete(LoginRequiredMixin, DeleteView):
     model = emprestimo
     template_name_suffix = '_delete'
     success_url = reverse_lazy('emprestimo_menu_alias')
+
+
+@login_required
+def metricas(request):
+    """Painel analitico alimentado pelas 5 views SQL de analytics."""
+    from . import analytics as an
+
+    # --- Aba Acervo ---
+    acervo_por_tipo = an.get_acervo_por_tipo()
+    acervo_totais = an.get_acervo_totais()
+    top_obras = an.get_top_obras_emprestadas()
+
+    # --- Aba Circulacao ---
+    circ_kpis = an.get_circulacao_kpis()
+    circ_mensal = an.get_circulacao_mensal()
+    circ_tipo_status = an.get_circulacao_por_tipo_status()
+    atrasados_lista = an.get_emprestimos_atrasados()
+
+    # --- Aba Leitores ---
+    leitores_kpis = an.get_leitores_kpis()
+    leitores_resumo = an.get_leitores_resumo()
+
+    # --- Aba IA ---
+    ia_cobertura = an.get_ia_cobertura()
+    obras_sem_emb = an.get_obras_sem_embedding()
+
+    # Taxa de devolucao
+    total = circ_kpis.get('total', 0) or 0
+    devolvidos = circ_kpis.get('devolvidos', 0) or 0
+    taxa_devolucao = round(devolvidos / total * 100, 1) if total else 0
+
+    # Cobertura IA %
+    ia_total = ia_cobertura.get('total', 0) or 0
+    ia_com = ia_cobertura.get('com_embedding', 0) or 0
+    ia_pct = round(ia_com / ia_total * 100, 1) if ia_total else 0
+
+    context = {
+        # Aba Acervo
+        'acervo_por_tipo_json': json.dumps(acervo_por_tipo),
+        'acervo_totais': acervo_totais,
+        'top_obras': top_obras,
+        # Aba Circulacao
+        'circ_kpis': circ_kpis,
+        'taxa_devolucao': taxa_devolucao,
+        'circ_mensal_json': json.dumps(circ_mensal),
+        'circ_tipo_status_json': json.dumps(circ_tipo_status),
+        'atrasados_lista': atrasados_lista,
+        # Aba Leitores
+        'leitores_kpis': leitores_kpis,
+        'leitores_resumo': leitores_resumo,
+        # Aba IA
+        'ia_cobertura': ia_cobertura,
+        'ia_pct': ia_pct,
+        'obras_sem_emb': obras_sem_emb,
+    }
+    return render(request, 'core/metricas.html', context)
