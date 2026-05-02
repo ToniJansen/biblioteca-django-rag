@@ -32,17 +32,62 @@ def logout_view(request):
 
 @login_required
 def menu(request):
+    from . import analytics as an
+
     todos_emprestimos = emprestimo.objects.filter(data_devolucao_real__isnull=True)
     atrasados = sum(1 for e in todos_emprestimos if e.atrasado)
+    total_livros = livro.objects.count()
+    total_leitores = pessoa.objects.filter(funcao='Leitor', ativo=True).count()
+
+    acervo_totais = an.get_acervo_totais()
+    acervo_por_tipo = an.get_acervo_por_tipo()
+    status_gauge = an.get_status_gauge()
+    circ_mensal_12m = an.get_circulacao_ultimos_12m()
+    ia_cobertura = an.get_ia_cobertura()
+    top_obras = an.get_top_obras_d3(limit=4)
+
+    exemplares_total = acervo_totais.get('exemplares_total', 0) or 0
+    exemplares_disponiveis = acervo_totais.get('exemplares_disponiveis', 0) or 0
+    disponibilidade_pct = round(exemplares_disponiveis / exemplares_total * 100, 1) if exemplares_total else 0
+    atraso_pct = round((status_gauge.get('atrasados', 0) or 0) / (status_gauge.get('total', 0) or 1) * 100, 1)
+    ia_total = ia_cobertura.get('total', 0) or 0
+    ia_pct = round((ia_cobertura.get('com_embedding', 0) or 0) / ia_total * 100, 1) if ia_total else 0
+
+    tipo_labels = {
+        'BIBLIOGRAFIA': 'Bibliografia',
+        'TESE_DISSERTACAO': 'Teses e Dissertacoes',
+        'MONOGRAFIA': 'Monografias',
+    }
+    acervo_tipo_cards = []
+    for item in acervo_por_tipo:
+        total_tipo = item.get('total_obras', 0) or 0
+        acervo_tipo_cards.append({
+            'label': tipo_labels.get(item.get('tipo_obra'), item.get('tipo_obra')),
+            'total': total_tipo,
+            'disponiveis': item.get('exemplares_disponiveis', 0) or 0,
+            'esgotadas': item.get('obras_esgotadas', 0) or 0,
+            'pct': round(total_tipo / total_livros * 100, 1) if total_livros else 0,
+        })
+
     context = {
-        'total_livros': livro.objects.count(),
-        'total_leitores': pessoa.objects.filter(funcao='Leitor', ativo=True).count(),
+        'total_livros': total_livros,
+        'total_leitores': total_leitores,
         'emprestimos_ativos': todos_emprestimos.count(),
         'emprestimos_atrasados': atrasados,
         'bibliografias': livro.objects.filter(tipo_obra='BIBLIOGRAFIA').count(),
         'teses': livro.objects.filter(tipo_obra='TESE_DISSERTACAO').count(),
         'monografias': livro.objects.filter(tipo_obra='MONOGRAFIA').count(),
         'usuario': request.user.get_full_name() or request.user.username,
+        'acervo_totais': acervo_totais,
+        'acervo_tipo_cards': acervo_tipo_cards,
+        'status_gauge': status_gauge,
+        'disponibilidade_pct': disponibilidade_pct,
+        'atraso_pct': atraso_pct,
+        'ia_pct': ia_pct,
+        'top_obras': top_obras,
+        'circ_mensal_12m': circ_mensal_12m,
+        'circ_mensal_12m_json': json.dumps(circ_mensal_12m),
+        'status_gauge_json': json.dumps(status_gauge),
     }
     return render(request, 'core/menu.html', context)
 
@@ -271,52 +316,176 @@ def metricas(request):
     """Painel analitico alimentado pelas 5 views SQL de analytics."""
     from . import analytics as an
 
-    # --- Aba Acervo ---
-    acervo_por_tipo = an.get_acervo_por_tipo()
+    # KPIs gerais
     acervo_totais = an.get_acervo_totais()
-    top_obras = an.get_top_obras_emprestadas()
+    acervo_por_tipo = an.get_acervo_por_tipo()
+    status_gauge = an.get_status_gauge()
 
-    # --- Aba Circulacao ---
-    circ_kpis = an.get_circulacao_kpis()
-    circ_mensal = an.get_circulacao_mensal()
-    circ_tipo_status = an.get_circulacao_por_tipo_status()
+    # Circulacao
+    circ_mensal_12m = an.get_circulacao_ultimos_12m()
+    heatmap = an.get_heatmap_mensal()
+    ritmo_semanal = an.get_ritmo_semanal()
     atrasados_lista = an.get_emprestimos_atrasados()
 
-    # --- Aba Leitores ---
+    # Acervo
+    top_obras = an.get_top_obras_d3(limit=8)
+
+    # Leitores
     leitores_kpis = an.get_leitores_kpis()
-    leitores_resumo = an.get_leitores_resumo()
+    perfil_leitores = an.get_perfil_leitores()
+    leitores_resumo = an.get_leitores_resumo(limit=8)
 
-    # --- Aba IA ---
+    # IA
     ia_cobertura = an.get_ia_cobertura()
-    obras_sem_emb = an.get_obras_sem_embedding()
-
-    # Taxa de devolucao
-    total = circ_kpis.get('total', 0) or 0
-    devolvidos = circ_kpis.get('devolvidos', 0) or 0
-    taxa_devolucao = round(devolvidos / total * 100, 1) if total else 0
-
-    # Cobertura IA %
+    obras_sem_emb = an.get_obras_sem_embedding()[:6]
     ia_total = ia_cobertura.get('total', 0) or 0
     ia_com = ia_cobertura.get('com_embedding', 0) or 0
     ia_pct = round(ia_com / ia_total * 100, 1) if ia_total else 0
 
+    exemplares_total = acervo_totais.get('exemplares_total', 0) or 0
+    exemplares_disponiveis = acervo_totais.get('exemplares_disponiveis', 0) or 0
+    disponibilidade_pct = round(exemplares_disponiveis / exemplares_total * 100, 1) if exemplares_total else 0
+
+    pico_circulacao = max(circ_mensal_12m, key=lambda item: item.get('total', 0), default={})
+    ultimo_mes = circ_mensal_12m[-1] if circ_mensal_12m else {}
+    ritmo_labels = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado']
+    pico_ritmo = max(ritmo_semanal, key=lambda item: item.get('total', 0), default={})
+    pico_dia_idx = pico_ritmo.get('dia_semana')
+    pico_dia_nome = ritmo_labels[pico_dia_idx] if isinstance(pico_dia_idx, int) and 0 <= pico_dia_idx < len(ritmo_labels) else 'Sem dados'
+    perfil_dominante = max(perfil_leitores, key=lambda item: item.get('qtd_leitores', 0), default={})
+    leitor_destaque = leitores_resumo[0] if leitores_resumo else {}
+    tipo_labels = {
+        'BIBLIOGRAFIA': 'Bibliografia',
+        'TESE_DISSERTACAO': 'Tese/Dissertacao',
+        'MONOGRAFIA': 'Monografia',
+    }
+    tipo_dominante = max(acervo_por_tipo, key=lambda item: item.get('total_obras', 0), default={})
+    tipo_dominante_nome = tipo_labels.get(tipo_dominante.get('tipo_obra'), tipo_dominante.get('tipo_obra', 'n/d'))
+    obras_esgotadas = acervo_totais.get('obras_esgotadas', 0) or 0
+    atrasados_total = status_gauge.get('atrasados', 0) or 0
+    ativos_total = status_gauge.get('ativos', 0) or 0
+
+    storytelling = {
+        'acervo': (
+            f"O acervo reune {acervo_totais.get('total_obras', 0) or 0} obras e mantém "
+            f"{disponibilidade_pct}% dos exemplares livres para nova circulacao."
+        ),
+        'circulacao': (
+            f"O pico recente de emprestimos aconteceu em {pico_circulacao.get('mes', 'n/d')} "
+            f"com {pico_circulacao.get('total', 0) or 0} movimentacoes; {pico_dia_nome} "
+            f"e o dia com maior ritmo operacional."
+        ),
+        'leitores': (
+            f"O perfil mais frequente e {perfil_dominante.get('perfil', 'n/d')}, enquanto "
+            f"{leitor_destaque.get('leitor_nome', 'o acervo')} concentra "
+            f"{leitor_destaque.get('total_emprestimos', 0) or 0} emprestimos."
+        ),
+        'ia': (
+            f"A camada de IA cobre {ia_pct}% do catalogo; "
+            f"{ia_cobertura.get('sem_embedding', 0) or 0} obras ainda aguardam embedding."
+        ),
+    }
+    story_titles = {
+        'acervo': (
+            f"{tipo_dominante_nome} concentra o acervo"
+            if tipo_dominante.get('total_obras')
+            else "O acervo ainda precisa de dados para leitura"
+        ),
+        'circulacao': (
+            f"{atrasados_total} emprestimos atrasados exigem acompanhamento"
+            if atrasados_total
+            else "A circulacao esta sem atrasos relevantes"
+        ),
+        'leitores': (
+            f"{perfil_dominante.get('perfil', 'Leitores')} e o perfil mais comum"
+            if perfil_dominante
+            else "A base de leitores ainda precisa de historico"
+        ),
+        'ia': (
+            f"IA cobre {ia_pct}% do catalogo"
+            if ia_total
+            else "A cobertura de IA ainda nao foi medida"
+        ),
+    }
+    story_notes = {
+        'acervo': (
+            f"{tipo_dominante_nome} soma {tipo_dominante.get('total_obras', 0) or 0} obras; "
+            f"{obras_esgotadas} obras estao sem saldo disponivel."
+        ),
+        'circulacao': (
+            f"Ha {ativos_total} emprestimos ativos e {atrasados_total} atrasados. "
+            f"O pico mensal observado foi {pico_circulacao.get('mes', 'n/d')}."
+        ),
+        'leitores': (
+            f"{leitor_destaque.get('leitor_nome', 'Nenhum leitor')} lidera o volume registrado, "
+            f"com {leitor_destaque.get('total_emprestimos', 0) or 0} emprestimos."
+        ),
+        'ia': (
+            f"{ia_cobertura.get('com_embedding', 0) or 0} obras ja alimentam recomendacao e RAG; "
+            f"{ia_cobertura.get('sem_embedding', 0) or 0} seguem pendentes."
+        ),
+    }
+
+    story_cards = [
+        {
+            'kicker': 'Acervo',
+            'value': acervo_totais.get('total_obras', 0) or 0,
+            'label': 'obras catalogadas',
+            'support': f'{disponibilidade_pct}% dos exemplares estao disponiveis',
+        },
+        {
+            'kicker': 'Circulacao',
+            'value': status_gauge.get('total', 0) or 0,
+            'label': 'emprestimos acumulados',
+            'support': f"Pico em {pico_circulacao.get('mes', 'n/d')}",
+        },
+        {
+            'kicker': 'Leitores',
+            'value': leitores_kpis.get('ativos', 0) or 0,
+            'label': 'leitores ativos',
+            'support': f"Perfil dominante: {perfil_dominante.get('perfil', 'n/d')}",
+        },
+        {
+            'kicker': 'IA',
+            'value': f'{ia_pct}%',
+            'label': 'cobertura de embeddings',
+            'support': f"{ia_cobertura.get('sem_embedding', 0) or 0} obras pendentes",
+        },
+    ]
+
     context = {
-        # Aba Acervo
-        'acervo_por_tipo_json': json.dumps(acervo_por_tipo),
+        # KPIs diretos
         'acervo_totais': acervo_totais,
-        'top_obras': top_obras,
-        # Aba Circulacao
-        'circ_kpis': circ_kpis,
-        'taxa_devolucao': taxa_devolucao,
-        'circ_mensal_json': json.dumps(circ_mensal),
-        'circ_tipo_status_json': json.dumps(circ_tipo_status),
-        'atrasados_lista': atrasados_lista,
-        # Aba Leitores
+        'status_gauge': status_gauge,
         'leitores_kpis': leitores_kpis,
-        'leitores_resumo': leitores_resumo,
-        # Aba IA
-        'ia_cobertura': ia_cobertura,
         'ia_pct': ia_pct,
+        'ia_cobertura': ia_cobertura,
+        'disponibilidade_pct': disponibilidade_pct,
+        'storytelling': storytelling,
+        'story_titles': story_titles,
+        'story_notes': story_notes,
+        'story_cards': story_cards,
+        'top_obras': top_obras[:5],
         'obras_sem_emb': obras_sem_emb,
+        'ultimo_mes_total': ultimo_mes.get('total', 0) or 0,
+        'pico_mes': pico_circulacao.get('mes', 'n/d'),
+        'pico_mes_total': pico_circulacao.get('total', 0) or 0,
+        'pico_dia_nome': pico_dia_nome,
+        'perfil_dominante': perfil_dominante.get('perfil', 'n/d'),
+        'acervo_por_tipo': acervo_por_tipo,
+        'circ_mensal_12m': circ_mensal_12m,
+        'ritmo_semanal': ritmo_semanal,
+        'perfil_leitores': perfil_leitores,
+        # D3 datasets (JSON)
+        'acervo_por_tipo_json': json.dumps(acervo_por_tipo),
+        'circ_mensal_12m_json': json.dumps(circ_mensal_12m),
+        'heatmap_json': json.dumps(heatmap),
+        'ritmo_semanal_json': json.dumps(ritmo_semanal),
+        'top_obras_json': json.dumps(top_obras),
+        'perfil_leitores_json': json.dumps(perfil_leitores),
+        'status_gauge_json': json.dumps(status_gauge),
+        # Tabelas compactas
+        'atrasados_lista': atrasados_lista[:5],
+        'leitores_resumo': leitores_resumo,
     }
     return render(request, 'core/metricas.html', context)
