@@ -8,6 +8,8 @@ numpy>=1.24
 
 # Importacao/exportacao de dados (CSV)
 pandas>=2.0
+requests>=2.31.0
+Faker>=20.0.0
 
 # Chat conversacional — Fase 2 (Groq API)
 groq>=0.11

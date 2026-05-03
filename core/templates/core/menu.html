@@ -1,31 +1,628 @@
 {% extends 'core/base.html' %}
-{% block title %}Menu{% endblock %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<h2>Bem-vindo, {{ usuario }}</h2>
-<div class="row mt-4">
-    <div class="col-md-3"><div class="card text-bg-success"><div class="card-body text-center"><h4>{{ total_livros }}</h4><small>Obras no acervo</small></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-info"><div class="card-body text-center"><h4>{{ total_leitores }}</h4><small>Leitores ativos</small></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-primary"><div class="card-body text-center"><h4>{{ emprestimos_ativos }}</h4><small>Emprestimos ativos</small></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-danger"><div class="card-body text-center"><h4>{{ emprestimos_atrasados }}</h4><small>Atrasados</small></div></div></div>
-</div>
-<h5 class="mt-4 text-muted">Acervo por tipo de obra</h5>
-<div class="row mt-2">
-    <div class="col-md-4"><div class="card border-primary"><div class="card-body text-center"><h4 class="text-primary">{{ bibliografias }}</h4><small>Bibliografia</small></div></div></div>
-    <div class="col-md-4"><div class="card border-warning"><div class="card-body text-center"><h4 class="text-warning">{{ teses }}</h4><small>Teses e Dissertacoes</small></div></div></div>
-    <div class="col-md-4"><div class="card border-info"><div class="card-body text-center"><h4 class="text-info">{{ monografias }}</h4><small>Monografias</small></div></div></div>
-</div>
-<div class="row mt-4 g-2">
-    <div class="col-md-3"><a href="{% url 'livro_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Livros</a></div>
-    <div class="col-md-3"><a href="{% url 'emprestimo_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Emprestimos</a></div>
-    <div class="col-md-3"><a href="{% url 'atrasados_alias' %}" class="btn btn-outline-danger w-100 py-3">Ver Atrasados</a></div>
-    <div class="col-md-3"><a href="{% url 'pessoa_menu_alias' %}" class="btn btn-outline-success w-100 py-3">Gerenciar Pessoas</a></div>
-</div>
-<div class="row mt-3">
-    <div class="col-12">
-        <a href="{% url 'chat_alias' %}" class="btn btn-dark w-100 py-3">
-            <strong>Pergunte ao Acervo</strong>
-            <small class="d-block text-light opacity-75">Chat com IA — busca semantica + LLM</small>
+<style>
+    :root {
+        --dash-ink: #17202a;
+        --dash-muted: #667085;
+        --dash-line: #dde3ea;
+        --dash-surface: #ffffff;
+        --dash-bg: #f5f7fa;
+        --dash-green: #16745f;
+        --dash-blue: #1f5f8b;
+        --dash-gold: #b7791f;
+        --dash-red: #b42318;
+    }
+
+    body {
+        background: var(--dash-bg);
+    }
+
+    .home-dashboard {
+        color: var(--dash-ink);
+    }
+
+    .dashboard-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .dashboard-title {
+        margin: 0;
+        font-size: 1.85rem;
+        font-weight: 750;
+    }
+
+    .dashboard-subtitle {
+        margin: 0.3rem 0 0;
+        color: var(--dash-muted);
+    }
+
+    .dashboard-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric-card,
+    .dashboard-panel,
+    .action-card {
+        background: var(--dash-surface);
+        border: 1px solid var(--dash-line);
+        border-radius: 8px;
+        box-shadow: 0 10px 26px rgba(23, 32, 42, 0.05);
+    }
+
+    .metric-card {
+        padding: 1rem;
+        min-height: 8.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-top: 4px solid var(--metric-color, var(--dash-green));
+    }
+
+    .metric-label {
+        color: var(--dash-muted);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        line-height: 1;
+        font-weight: 800;
+        margin-top: 0.35rem;
+    }
+
+    .metric-note {
+        color: var(--dash-muted);
+        font-size: 0.92rem;
+        margin-top: 0.75rem;
+    }
+
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .dashboard-panel {
+        padding: 1rem;
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .panel-title h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 750;
+    }
+
+    .panel-title span {
+        color: var(--dash-muted);
+        font-size: 0.9rem;
+    }
+
+    .mini-chart {
+        width: 100%;
+        min-height: 210px;
+    }
+
+    .risk-strip {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: center;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+    }
+
+    .risk-strip strong {
+        color: var(--dash-red);
+    }
+
+    .risk-strip p {
+        color: #7c2d12;
+        margin: 0.25rem 0 0;
+    }
+
+    .type-list,
+    .ranking-list,
+    .action-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .type-row {
+        display: grid;
+        grid-template-columns: minmax(130px, 0.7fr) minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .type-name {
+        font-weight: 700;
+    }
+
+    .type-meta {
+        display: block;
+        color: var(--dash-muted);
+        font-size: 0.86rem;
+        font-weight: 400;
+    }
+
+    .type-bar {
+        height: 12px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #e9eef3;
+    }
+
+    .type-fill {
+        height: 100%;
+        min-width: 2px;
+        background: var(--bar-color, var(--dash-green));
+    }
+
+    .ranking-item {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--dash-line);
+    }
+
+    .ranking-item:first-child {
+        border-top: 0;
+        padding-top: 0;
+    }
+
+    .ranking-index {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #e8f4ef;
+        color: var(--dash-green);
+        font-weight: 800;
+    }
+
+    .ranking-title {
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ranking-meta {
+        color: var(--dash-muted);
+        font-size: 0.88rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ranking-value {
+        font-weight: 800;
+        color: var(--dash-blue);
+    }
+
+    .action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 1rem;
+    }
+
+    .action-card {
+        display: block;
+        padding: 0.9rem;
+        text-decoration: none;
+        color: var(--dash-ink);
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .action-card:hover {
+        color: var(--dash-ink);
+        border-color: var(--dash-green);
+        transform: translateY(-2px);
+    }
+
+    .action-card strong {
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+
+    .action-card span {
+        color: var(--dash-muted);
+        font-size: 0.9rem;
+    }
+
+    .chat-band {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 8px;
+        background: #17202a;
+        color: #fff;
+    }
+
+    .chat-band p {
+        margin: 0.2rem 0 0;
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .empty-chart {
+        min-height: 210px;
+        display: grid;
+        place-items: center;
+        color: var(--dash-muted);
+        border: 1px dashed var(--dash-line);
+        border-radius: 8px;
+    }
+
+    @media (max-width: 991.98px) {
+        .dashboard-header,
+        .dashboard-layout,
+        .risk-strip,
+        .chat-band {
+            grid-template-columns: 1fr;
+        }
+
+        .metric-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .dashboard-actions {
+            justify-content: flex-start;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .metric-grid,
+        .action-grid,
+        .type-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{{ circ_mensal_12m|json_script:"home-circ-data" }}
+{{ status_gauge|json_script:"home-status-data" }}
+
+<div class="home-dashboard">
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Bem-vindo, {{ usuario }}</h1>
+            <p class="dashboard-subtitle">Visao operacional da biblioteca: acervo, circulacao, atrasos e IA.</p>
+        </div>
+        <div class="dashboard-actions">
+            <a href="{% url 'metricas_alias' %}" class="btn btn-success">Abrir painel analitico</a>
+            <a href="{% url 'chat_alias' %}" class="btn btn-dark">Pergunte ao Acervo</a>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <article class="metric-card" style="--metric-color: var(--dash-green);">
+            <div>
+                <div class="metric-label">Acervo</div>
+                <div class="metric-value">{{ total_livros }}</div>
+            </div>
+            <div class="metric-note">{{ acervo_totais.exemplares_total|default:"0" }} exemplares cadastrados</div>
+        </article>
+        <article class="metric-card" style="--metric-color: var(--dash-blue);">
+            <div>
+                <div class="metric-label">Leitores ativos</div>
+                <div class="metric-value">{{ total_leitores }}</div>
+            </div>
+            <div class="metric-note">Base ativa para emprestimos e recomendacoes</div>
+        </article>
+        <article class="metric-card" style="--metric-color: var(--dash-gold);">
+            <div>
+                <div class="metric-label">Emprestimos ativos</div>
+                <div class="metric-value">{{ emprestimos_ativos }}</div>
+            </div>
+            <div class="metric-note">{{ disponibilidade_pct }}% dos exemplares disponiveis</div>
+        </article>
+        <article class="metric-card" style="--metric-color: var(--dash-red);">
+            <div>
+                <div class="metric-label">Atrasados</div>
+                <div class="metric-value">{{ emprestimos_atrasados }}</div>
+            </div>
+            <div class="metric-note">{{ atraso_pct }}% da circulacao registrada</div>
+        </article>
+    </div>
+
+    <section class="risk-strip">
+        <div>
+            <strong>{{ emprestimos_atrasados }} emprestimos precisam de acompanhamento</strong>
+            <p>Priorize devolucoes vencidas antes de ampliar novos emprestimos nas obras com menor saldo.</p>
+        </div>
+        <a href="{% url 'atrasados_alias' %}" class="btn btn-outline-danger">Ver atrasados</a>
+    </section>
+
+    <div class="dashboard-layout">
+        <div class="d-grid gap-3">
+            <section class="dashboard-panel">
+                <div class="panel-title">
+                    <h3>Tendencia de emprestimos</h3>
+                    <span>ultimos 12 meses</span>
+                </div>
+                <div id="home-circ-chart" class="mini-chart"></div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="panel-title">
+                    <h3>Acervo por tipo de obra</h3>
+                    <span>{{ disponibilidade_pct }}% disponivel</span>
+                </div>
+                <div class="type-list">
+                    {% for tipo in acervo_tipo_cards %}
+                    <div class="type-row">
+                        <div class="type-name">
+                            {{ tipo.label }}
+                            <span class="type-meta">{{ tipo.total }} obras · {{ tipo.disponiveis }} exemplares livres</span>
+                        </div>
+                        <div class="type-bar" aria-hidden="true">
+                            <div class="type-fill" style="width: {{ tipo.pct }}%; --bar-color: {% cycle '#16745f' '#1f5f8b' '#b7791f' %};"></div>
+                        </div>
+                        <strong>{{ tipo.pct }}%</strong>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted">Nenhum dado de acervo disponivel.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <aside class="d-grid gap-3">
+            <section class="dashboard-panel">
+                <div class="panel-title">
+                    <h3>Status da circulacao</h3>
+                    <span>{{ status_gauge.total|default:"0" }} registros</span>
+                </div>
+                <div id="home-status-chart" class="mini-chart"></div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="panel-title">
+                    <h3>Obras mais demandadas</h3>
+                    <span>top 4</span>
+                </div>
+                <div class="ranking-list">
+                    {% for obra in top_obras %}
+                    <div class="ranking-item">
+                        <div class="ranking-index">{{ forloop.counter }}</div>
+                        <div>
+                            <div class="ranking-title">{{ obra.titulo }}</div>
+                            <div class="ranking-meta">{{ obra.autor }}</div>
+                        </div>
+                        <div class="ranking-value">{{ obra.total }}</div>
+                    </div>
+                    {% empty %}
+                    <div class="text-muted">Sem emprestimos registrados para ranking.</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="panel-title">
+                    <h3>Prontidao da IA</h3>
+                    <span>{{ ia_pct }}% coberto</span>
+                </div>
+                <div class="type-bar" aria-hidden="true">
+                    <div class="type-fill" style="width: {{ ia_pct }}%; --bar-color: var(--dash-blue);"></div>
+                </div>
+                <p class="mb-0 mt-2 text-muted">Cobertura de embeddings para recomendacao e chat RAG.</p>
+            </section>
+        </aside>
+    </div>
+
+    <div class="action-grid">
+        <a href="{% url 'livro_menu_alias' %}" class="action-card">
+            <strong>Gerenciar livros</strong>
+            <span>Cadastro, estoque e detalhes das obras</span>
+        </a>
+        <a href="{% url 'emprestimo_menu_alias' %}" class="action-card">
+            <strong>Gerenciar emprestimos</strong>
+            <span>Registrar saidas, devolucoes e previsoes</span>
+        </a>
+        <a href="{% url 'pessoa_menu_alias' %}" class="action-card">
+            <strong>Gerenciar pessoas</strong>
+            <span>Leitores, bibliotecarios e status ativo</span>
+        </a>
+        <a href="{% url 'metricas_alias' %}" class="action-card">
+            <strong>Painel storytelling</strong>
+            <span>Analise detalhada com graficos interativos</span>
         </a>
     </div>
+
+    <section class="chat-band">
+        <div>
+            <strong>Pergunte ao Acervo</strong>
+            <p>Use o chat RAG para consultar obras por tema, autor, disponibilidade ou similaridade.</p>
+        </div>
+        <a href="{% url 'chat_alias' %}" class="btn btn-light">Abrir chat</a>
+    </section>
 </div>
+
+<script src="{% static 'core/vendor/d3.v7.min.js' %}"></script>
+<script>window.d3 || document.write('<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"><\/script>')</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.d3) {
+        document.querySelectorAll('.mini-chart').forEach(node => {
+            node.innerHTML = '<div class="empty-chart">Nao foi possivel carregar a biblioteca D3.</div>';
+        });
+        return;
+    }
+
+    const circMensal = JSON.parse(document.getElementById('home-circ-data').textContent || '[]');
+    const statusGauge = JSON.parse(document.getElementById('home-status-data').textContent || '{}');
+    const palette = {
+        green: '#16745f',
+        blue: '#1f5f8b',
+        gold: '#b7791f',
+        red: '#b42318',
+        muted: '#667085',
+        line: '#dde3ea'
+    };
+
+    function clearNode(selector) {
+        const node = document.querySelector(selector);
+        if (node) node.innerHTML = '';
+        return node;
+    }
+
+    function svgBase(selector, minHeight) {
+        const node = clearNode(selector);
+        if (!node) return null;
+        const width = Math.max(node.clientWidth, 260);
+        const height = minHeight;
+        const svg = d3.select(node).append('svg')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('viewBox', `0 0 ${width} ${height}`);
+        return { svg, width, height };
+    }
+
+    function formatMes(mes) {
+        if (!mes || !mes.includes('-')) return mes || 'n/d';
+        const [ano, mesNum] = mes.split('-');
+        const nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        return `${nomes[Number(mesNum) - 1] || mesNum}/${ano.slice(-2)}`;
+    }
+
+    function drawTrend() {
+        const data = circMensal.map(item => ({ mes: item.mes || item.ano_mes_saida, total: Number(item.total || 0) }));
+        if (!data.length) {
+            const node = clearNode('#home-circ-chart');
+            if (node) node.innerHTML = '<div class="empty-chart">Sem historico mensal.</div>';
+            return;
+        }
+
+        const chart = svgBase('#home-circ-chart', 220);
+        if (!chart) return;
+        const { svg, width, height } = chart;
+        const margin = { top: 16, right: 18, bottom: 36, left: 46 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+        const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+        const x = d3.scalePoint().domain(data.map(d => d.mes)).range([0, innerWidth]);
+        const y = d3.scaleLinear().domain([0, d3.max(data, d => d.total) || 1]).nice().range([innerHeight, 0]);
+        const line = d3.line().x(d => x(d.mes)).y(d => y(d.total)).curve(d3.curveMonotoneX);
+        const area = d3.area().x(d => x(d.mes)).y0(innerHeight).y1(d => y(d.total)).curve(d3.curveMonotoneX);
+
+        g.append('g')
+            .attr('transform', `translate(0,${innerHeight})`)
+            .call(d3.axisBottom(x).tickFormat(formatMes).tickSizeOuter(0))
+            .call(axis => axis.selectAll('text').attr('fill', palette.muted).style('font-size', '11px'))
+            .call(axis => axis.selectAll('line, path').attr('stroke', palette.line));
+
+        g.append('g')
+            .call(d3.axisLeft(y).ticks(4).tickSize(-innerWidth))
+            .call(axis => axis.selectAll('text').attr('fill', palette.muted))
+            .call(axis => axis.selectAll('line').attr('stroke', palette.line))
+            .call(axis => axis.select('path').remove());
+
+        g.append('path').datum(data).attr('fill', 'rgba(31,95,139,0.13)').attr('d', area);
+        g.append('path').datum(data).attr('fill', 'none').attr('stroke', palette.blue).attr('stroke-width', 3).attr('d', line);
+        g.selectAll('circle')
+            .data(data)
+            .join('circle')
+            .attr('cx', d => x(d.mes))
+            .attr('cy', d => y(d.total))
+            .attr('r', 4)
+            .attr('fill', palette.green)
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2);
+    }
+
+    function drawStatus() {
+        const data = [
+            { label: 'Ativos', value: Number(statusGauge.ativos || 0), color: palette.blue },
+            { label: 'Devolvidos', value: Number(statusGauge.devolvidos || 0), color: palette.green },
+            { label: 'Atrasados', value: Number(statusGauge.atrasados || 0), color: palette.red }
+        ].filter(item => item.value > 0);
+
+        if (!data.length) {
+            const node = clearNode('#home-status-chart');
+            if (node) node.innerHTML = '<div class="empty-chart">Sem circulacao registrada.</div>';
+            return;
+        }
+
+        const chart = svgBase('#home-status-chart', 210);
+        if (!chart) return;
+        const { svg, width, height } = chart;
+        const radius = Math.min(width, height) / 2 - 16;
+        const total = d3.sum(data, d => d.value);
+        const g = svg.append('g').attr('transform', `translate(${width / 2},${height / 2})`);
+        const arc = d3.arc().innerRadius(radius * 0.58).outerRadius(radius);
+        const pie = d3.pie().sort(null).value(d => d.value);
+
+        g.selectAll('path')
+            .data(pie(data))
+            .join('path')
+            .attr('d', arc)
+            .attr('fill', d => d.data.color)
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 4);
+
+        g.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', -4)
+            .attr('font-size', 28)
+            .attr('font-weight', 800)
+            .attr('fill', '#17202a')
+            .text(total);
+        g.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('y', 20)
+            .attr('font-size', 12)
+            .attr('fill', palette.muted)
+            .text('emprestimos');
+    }
+
+    function render() {
+        drawTrend();
+        drawStatus();
+    }
+
+    render();
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(render, 120);
+    });
+});
+</script>
 {% endblock %}

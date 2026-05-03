@@ -128,6 +128,58 @@ Métricas em cards coloridos (`core/views.py:32-44` → `core/templates/core/men
 | Teses/dissertações | `teses` | borda amarela |
 | Monografias | `monografias` | borda info |
 
+#### 2.5.1 Evolução proposta — camada de analytics
+
+> Esta subseção é uma proposta de modelagem para a Sprint 3, não evidência de implementação já existente no código.
+
+O dashboard deve evoluir de cards isolados para um painel em `/metricas/`, alimentado por views de leitura sobre o banco transacional. A principal peça é a `vw_analytics_emprestimos_obt`: uma **view analítica em formato de OBT** (*One Big Table*) com grão de 1 linha por empréstimo. Ela reúne dados de `emprestimo`, `livro`, `pessoa` e `LivroEmbedding`, sem duplicar dados em tabela física.
+
+Essa abordagem preserva o modelo normalizado do CRUD e cria um modelo de leitura específico para análise. A definição explícita do grão segue a prática de modelagem dimensional (KIMBALL; ROSS, 2013). O uso de uma view também mantém o escopo simples: no SQLite, uma view é uma consulta `SELECT` nomeada e reutilizável como fonte de leitura (SQLITE, 2026). A ideia se aproxima da separação entre escrita e leitura, mas sem adotar uma arquitetura CQRS completa, que seria excessiva para este MVP (FOWLER, 2011).
+
+```mermaid
+flowchart LR
+    subgraph T["Modelo transacional"]
+        P["pessoa"]
+        L["livro"]
+        E["emprestimo"]
+        LE["LivroEmbedding"]
+    end
+
+    P --> OBT["vw_analytics_emprestimos_obt<br/>1 linha por empréstimo"]
+    L --> OBT
+    E --> OBT
+    LE --> IA["vw_analytics_ia_cobertura"]
+
+    OBT --> A["vw_analytics_acervo_por_tipo"]
+    OBT --> C["vw_analytics_circulacao_mensal"]
+    OBT --> R["vw_analytics_leitores_resumo"]
+
+    A --> M["/metricas/<br/>Painel analítico"]
+    C --> M
+    R --> M
+    IA --> M
+
+    M --> B1["Acervo"]
+    M --> B2["Circulação"]
+    M --> B3["Leitores"]
+    M --> B4["IA e qualidade"]
+```
+
+Para o MVP, a recomendação é criar **5 views SQL/read models** e **1 view Django**:
+
+| View | Papel |
+|---|---|
+| `vw_analytics_emprestimos_obt` | base analítica por empréstimo |
+| `vw_analytics_acervo_por_tipo` | composição e disponibilidade do acervo |
+| `vw_analytics_circulacao_mensal` | empréstimos por mês, tipo e status |
+| `vw_analytics_leitores_resumo` | engajamento e risco de atraso por leitor |
+| `vw_analytics_ia_cobertura` | obras com/sem embedding |
+| `metricas` | página Django que renderiza o painel |
+
+Os primeiros gráficos devem cobrir: acervo por tipo, disponibilidade por tipo, empréstimos por status, empréstimos por mês, top-10 obras mais emprestadas, leitores com maior atraso e cobertura de embeddings. Métricas como crescimento mensal do acervo, obras mais recomendadas, cliques em similares e latência do chat exigem instrumentação futura (`created_at`, `RecomendacaoLog`, `InteracaoRecomendacao`, `ChatLog`). Se o volume crescer, parte dessas views pode evoluir para views materializadas ou tabelas de agregação (POSTGRESQL, 2026).
+
+**Referências:** KIMBALL; ROSS (2013), FOWLER (2011), SQLITE (2026), POSTGRESQL (2026).
+
 ### 2.6 IA Fase 1 — Recomendação semântica
 
 Fluxo completo da requisição:
